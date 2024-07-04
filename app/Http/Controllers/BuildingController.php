@@ -30,7 +30,7 @@ class BuildingController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
+            'address' => 'string|max:255',
         ]);
 
         if ($validator->fails()) {
