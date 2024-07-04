@@ -106,4 +106,30 @@ class BuildingController extends Controller
 
         return response()->json(['message' => 'Building deleted successfully'], 200);
     }
+
+
+    public function attachDepartments(Request $request, Building $building)
+    {
+        $departmentId = $request->department_id;
+
+        $building->departments()->attach($departmentId);
+
+        return response()->json(['message' => 'Department attached successfully']);
+    }
+
+    /**
+     * Detach a department from a building.
+     *
+     * @param Request $request
+     * @param Building $building
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function detachDepartments(Request $request, Building $building)
+    {
+        $departmentId = $request->department_id;
+
+        $building->departments()->detach($departmentId);
+
+        return response()->json(['message' => 'Department detached successfully']);
+    }
 }

@@ -10,5 +10,10 @@ class Building extends Model
     use HasFactory;
 
     protected $fillable = ['name', 'address'];
+
+    public function departments()
+    {
+        return $this->belongsToMany(Department::class, 'building_department');
+    }
     
 }

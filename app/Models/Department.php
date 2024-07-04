@@ -14,4 +14,9 @@ class Department extends Model
         'parent_id',
     ];
 
+    public function buildings()
+    {
+        return $this->belongsToMany(Building::class, 'building_department');
+    }
+
 }
