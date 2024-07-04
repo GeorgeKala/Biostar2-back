@@ -1,0 +1,26 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\User;
+use App\Models\UserTypes;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class UserSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run()
+    {
+        $adminUser = User::create([
+            'name' => 'Admin User',
+            'email' => 'admin@example.com',
+            'password' => bcrypt('password'),
+            'username' => 'admin', 
+            'user_type_id' => 1,
+            'employee' => 'Employee number 12345',
+        ]);
+    }
+}
