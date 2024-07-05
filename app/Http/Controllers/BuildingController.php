@@ -26,6 +26,7 @@ class BuildingController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
+    
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -48,6 +49,7 @@ class BuildingController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
+    
     public function show($id)
     {
         $building = Building::find($id);

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\ScheduleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserTypeController;
@@ -52,6 +53,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{department}', [DepartmentController::class, 'show']);
         Route::put('/{department}', [DepartmentController::class, 'update']);
         Route::delete('/{department}', [DepartmentController::class, 'destroy']);
+    });
+
+
+    Route::prefix('schedules')->group(function () {
+        Route::get('/', [ScheduleController::class, 'index']);
+        Route::post('', [ScheduleController::class, 'store']);
+        Route::get('/{schedule}', [ScheduleController::class, 'show']);
+        Route::put('/{schedule}', [ScheduleController::class, 'update']);
+        Route::patch('/{schedule}', [ScheduleController::class, 'update']);
+        Route::delete('/{schedule}', [ScheduleController::class, 'destroy']);
     });
    
 });
