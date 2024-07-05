@@ -3,10 +3,12 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\GroupController;
 use App\Http\Controllers\ScheduleController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserTypeController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -37,6 +39,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{user_type}', [UserTypeController::class, 'destroy']);
     });
     
+
     Route::prefix('buildings')->group(function () {
         Route::get('/', [BuildingController::class, 'index']);
         Route::post('/', [BuildingController::class, 'store']);
@@ -47,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{building}/detach-department', [BuildingController::class, 'detachDepartments']);
     });
     
+
     Route::prefix('departments')->group(function () {
         Route::get('/', [DepartmentController::class, 'index']);
         Route::post('/', [DepartmentController::class, 'store']);
@@ -64,6 +68,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/{schedule}', [ScheduleController::class, 'update']);
         Route::delete('/{schedule}', [ScheduleController::class, 'destroy']);
     });
-   
+
+
+    Route::prefix('groups')->group(function () {
+        Route::get('/', [GroupController::class, 'index']);
+        Route::post('', [GroupController::class, 'store']);
+        Route::get('/{group}', [GroupController::class, 'show']);
+        Route::put('/{group}', [GroupController::class, 'update']);
+        Route::patch('/{group}', [GroupController::class, 'update']);
+        Route::delete('/{group}', [GroupController::class, 'destroy']);
+    });
+    
 });
 
