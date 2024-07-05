@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\ScheduleController;
 use Illuminate\Http\Request;
@@ -77,6 +78,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{group}', [GroupController::class, 'update']);
         Route::patch('/{group}', [GroupController::class, 'update']);
         Route::delete('/{group}', [GroupController::class, 'destroy']);
+    });
+
+    Route::prefix('employees')->group(function () {
+        Route::get('/', [EmployeeController::class, 'index']);
+        Route::post('/', [EmployeeController::class, 'store']);
+        Route::get('/{employee}', [EmployeeController::class, 'show']);
+        Route::put('/{employee}', [EmployeeController::class, 'update']);
+        Route::patch('/{employee}', [EmployeeController::class, 'update']);
+        Route::delete('/{employee}', [EmployeeController::class, 'destroy']);
     });
     
 });
