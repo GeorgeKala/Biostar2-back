@@ -27,31 +27,32 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::prefix('user-types')->group(function () {
+        Route::get('/', [UserTypeController::class, 'index']);
+        Route::post('/', [UserTypeController::class, 'store']);
+        Route::get('/{user_type}', [UserTypeController::class, 'show']);
+        Route::put('/{user_type}', [UserTypeController::class, 'update']);
+        Route::delete('/{user_type}', [UserTypeController::class, 'destroy']);
+    });
+    
+    Route::prefix('buildings')->group(function () {
+        Route::get('/', [BuildingController::class, 'index']);
+        Route::post('/', [BuildingController::class, 'store']);
+        Route::get('/{building}', [BuildingController::class, 'show']);
+        Route::put('/{building}', [BuildingController::class, 'update']);
+        Route::delete('/{building}', [BuildingController::class, 'destroy']);
+        Route::post('/{building}/attach-department', [BuildingController::class, 'attachDepartments']);
+        Route::post('/{building}/detach-department', [BuildingController::class, 'detachDepartments']);
+    });
+    
+    Route::prefix('departments')->group(function () {
+        Route::get('/', [DepartmentController::class, 'index']);
+        Route::post('/', [DepartmentController::class, 'store']);
+        Route::get('/{department}', [DepartmentController::class, 'show']);
+        Route::put('/{department}', [DepartmentController::class, 'update']);
+        Route::delete('/{department}', [DepartmentController::class, 'destroy']);
+    });
    
 });
 
-Route::prefix('user-types')->group(function () {
-    Route::get('/', [UserTypeController::class, 'index']);
-    Route::post('/', [UserTypeController::class, 'store']);
-    Route::get('/{user_type}', [UserTypeController::class, 'show']);
-    Route::put('/{user_type}', [UserTypeController::class, 'update']);
-    Route::delete('/{user_type}', [UserTypeController::class, 'destroy']);
-});
-
-Route::prefix('buildings')->group(function () {
-    Route::get('/', [BuildingController::class, 'index']);
-    Route::post('/', [BuildingController::class, 'store']);
-    Route::get('/{building}', [BuildingController::class, 'show']);
-    Route::put('/{building}', [BuildingController::class, 'update']);
-    Route::delete('/{building}', [BuildingController::class, 'destroy']);
-    Route::post('/{building}/attach-department', [BuildingController::class, 'attachDepartments']);
-    Route::post('/{building}/detach-department', [BuildingController::class, 'detachDepartments']);
-});
-
-Route::prefix('departments')->group(function () {
-    Route::get('/', [DepartmentController::class, 'index']);
-    Route::post('/', [DepartmentController::class, 'store']);
-    Route::get('/{department}', [DepartmentController::class, 'show']);
-    Route::put('/{department}', [DepartmentController::class, 'update']);
-    Route::delete('/{department}', [DepartmentController::class, 'destroy']);
-});
