@@ -6,6 +6,7 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserTypeController;
@@ -87,6 +88,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{employee}', [EmployeeController::class, 'update']);
         Route::patch('/{employee}', [EmployeeController::class, 'update']);
         Route::delete('/{employee}', [EmployeeController::class, 'destroy']);
+    });
+
+
+    Route::prefix('users')->group(function () {
+        Route::get('/', [UserController::class, 'index']);
+        Route::post('/', [UserController::class, 'store']);
+        Route::get('/{user}', [UserController::class, 'show']);
+        Route::put('/{user}', [UserController::class, 'update']);
+        Route::delete('/{user}', [UserController::class, 'destroy']);
     });
     
 });

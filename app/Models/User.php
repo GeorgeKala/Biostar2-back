@@ -24,6 +24,7 @@ class User extends Authenticatable
         'username',
         'user_type_id',
         'employee',
+        'department_id'
     ];
 
     /**
@@ -48,5 +49,10 @@ class User extends Authenticatable
     public function userType()
     {
         return $this->belongsTo(UserTypes::class, 'user_type_id');
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
     }
 }
