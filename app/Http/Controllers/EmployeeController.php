@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Http\Requests\EmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
 use GuzzleHttp\Exception\RequestException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -123,60 +124,51 @@ class EmployeeController extends Controller
      * @param  \App\Models\Employee  $employee
      * @return \Illuminate\Http\Response
      */
+
     public function update(UpdateEmployeeRequest $request, Employee $employee)
     {
-        $validated = $request->validated();
+        DB::beginTransaction();
 
-        $employee->fill($validated);
-        $employee->save();
+        try {
+            $validated = $request->validated();
+            
 
-        return response()->json($employee);
+            $employee->fill($validated);
+            $employee->save();
+
+            $biostarUrl = 'https://10.150.20.173/api/users/' . $employee->id;
+
+            $biostarUserData = [
+                'User' => [
+                    'start_datetime' => $validated['start_datetime'] ?? '2001-01-01T00:00:00.00Z',
+                    'expiry_datetime' => $validated['expiry_datetime'] ?? '2030-12-31T23:59:00.00Z',
+                    'name' => $validated['fullname'] ?? 'Unknown',
+                    // 'email' => $employee->id . '@gmail.com',
+                    'permission' => ['id' => '3'],
+                    // 'login_id' => $employee->id,
+                    // 'password' => 'password',
+                    // 'user_group_id' => ['id' => '1'],
+                ]
+            ];
+
+            $response = Http::withOptions(['verify' => false])
+                ->withHeaders([
+                    "bs-session-id" => $request->session_id
+                ])
+                ->put($biostarUrl, $biostarUserData);
+
+            if ($response->successful()) {
+                DB::commit();
+                return response()->json($employee);
+            } else {
+                DB::rollBack();
+                return response()->json(['error' => 'Failed to update user in Biostar API', 'response' => $response->json()], $response->status());
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
-
-
-    // public function update(UpdateEmployeeRequest $request, Employee $employee)
-    // {
-    //     DB::beginTransaction();
-
-    //     try {
-    //         $validated = $request->validated();
-
-    //         $employee->fill($validated);
-    //         $employee->save();
-
-    //         $biostarUrl = 'https://10.150.20.173/api/users/' . $employee->id;
-
-    //         $biostarUserData = [
-    //             'User' => [
-    //                 'start_datetime' => $validated['start_datetime'] ?? '2001-01-01T00:00:00.00Z',
-    //                 'expiry_datetime' => $validated['expiry_datetime'] ?? '2030-12-31T23:59:00.00Z',
-    //                 'name' => $validated['fullname'] ?? 'Unknown',
-    //                 'email' => $employee->id . '@gmail.com',
-    //                 'permission' => ['id' => '1'],
-    //                 'login_id' => $employee->id,
-    //                 'password' => 'password',
-    //                 'user_group_id' => ['id' => '1'],
-    //             ]
-    //         ];
-
-    //         $response = Http::withOptions(['verify' => false])
-    //             ->withHeaders([
-    //                 "bs-session-id" => '6f0999e5dcba4cfbac5bdf318cda7a7a'
-    //             ])
-    //             ->put($biostarUrl, $biostarUserData);
-
-    //         if ($response->successful()) {
-    //             DB::commit();
-    //             return response()->json($employee);
-    //         } else {
-    //             DB::rollBack();
-    //             return response()->json(['error' => 'Failed to update user in Biostar API', 'response' => $response->json()], $response->status());
-    //         }
-    //     } catch (\Exception $e) {
-    //         DB::rollBack();
-    //         return response()->json(['error' => $e->getMessage()], 500);
-    //     }
-    // }
 
     /**
      * Remove the specified employee from storage.
@@ -184,9 +176,41 @@ class EmployeeController extends Controller
      * @param  \App\Models\Employee  $employee
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Employee $employee)
+    public function destroy(Employee $employee, Request $request)
     {
-        $employee->delete();
-        return response()->json(null, 204);
+        $biostarUrl = 'https://10.150.20.173/api/users/' . $employee->id;
+        try {
+            DB::beginTransaction();
+
+            $response = Http::withOptions(['verify' => false])
+                ->withHeaders([
+                    "bs-session-id" => $request->header()['bs-session-id'][0]
+                ])
+                ->delete($biostarUrl);
+
+            if ($response->successful()) {
+                $employee->delete();
+                DB::commit();
+                return response()->json(null, 204);
+            } else {
+                DB::rollBack();
+                return response()->json(['error' => 'Failed to delete user in Biostar API', 'response' => $response->json()], $response->status());
+            }
+        } catch (RequestException $e) {
+            DB::rollBack();
+            if ($e->getResponse()) {
+                return response()->json([
+                    'error' => $e->getMessage(),
+                    'message' => $e->getResponse(),
+                ]);
+            } else {
+                return response()->json([
+                    'error' => $e->getMessage(),
+                ], 500);
+            }
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }
