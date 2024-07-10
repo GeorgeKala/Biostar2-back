@@ -45,17 +45,20 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('buildings')->group(function () {
         Route::get('/', [BuildingController::class, 'index']);
+        Route::get('/departments', [BuildingController::class, 'getBuildingsWithDepartments']);
         Route::post('/', [BuildingController::class, 'store']);
         Route::get('/{building}', [BuildingController::class, 'show']);
         Route::put('/{building}', [BuildingController::class, 'update']);
         Route::delete('/{building}', [BuildingController::class, 'destroy']);
         Route::post('/{building}/attach-department', [BuildingController::class, 'attachDepartments']);
         Route::post('/{building}/detach-department', [BuildingController::class, 'detachDepartments']);
+        Route::post('/{building}/update-department', [BuildingController::class, 'updateAttachedDepartments']);
     });
     
 
     Route::prefix('departments')->group(function () {
         Route::get('/', [DepartmentController::class, 'index']);
+        Route::get('/nested', [DepartmentController::class, 'nestedDepartments']);
         Route::post('/', [DepartmentController::class, 'store']);
         Route::get('/{department}', [DepartmentController::class, 'show']);
         Route::put('/{department}', [DepartmentController::class, 'update']);

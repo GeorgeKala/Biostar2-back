@@ -14,8 +14,9 @@ return new class extends Migration
         Schema::create('departments', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->foreignIdFor(\App\Models\Department::class)->nullable()->constrained()->cascadeOnDelete();
+            $table->unsignedBigInteger('parent_id')->nullable();
             $table->timestamps();
+            $table->foreign('parent_id')->references('id')->on('departments')->onDelete('cascade');
         });
     }
 

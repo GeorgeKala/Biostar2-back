@@ -13,7 +13,8 @@ class Building extends Model
 
     public function departments()
     {
-        return $this->belongsToMany(Department::class, 'building_department');
+        return $this->belongsToMany(Department::class, 'building_department')
+                    ->withPivot('id');
     }
     
 }

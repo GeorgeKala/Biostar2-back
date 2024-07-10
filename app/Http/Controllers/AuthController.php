@@ -13,66 +13,66 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $validation = Validator::make($request->all(), [
-            'username' => 'required',
-            'password' => 'required'
+            'username' => 'required|string',
+            'password' => 'required|string'
         ]);
 
         if ($validation->fails()) {
-            return response()->json($validation->errors(), 400);
+            return response()->json([
+                'status' => 400,
+                'errors' => $validation->errors()
+            ], 400);
         }
 
         $user = User::where('username', $request->username)->first();
 
-        if ($user) {
-            if (Hash::check($request->password, $user->password)) {
-                $token = $user->createToken('auth_token')->plainTextToken;
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'status' => 401,
+                'message' => 'The provided credentials are incorrect.'
+            ], 401);
+        }
 
-                $userData = [
-                    'User' => [
-                        'login_id' => $request->username,
-                        'password' => $request->password
-                    ]
-                ];
+        $token = $user->createToken('auth_token')->plainTextToken;
 
-                $biostarUrl = 'https://10.150.20.173/api/login';
+        $userData = [
+            'User' => [
+                'login_id' => $request->username,
+                'password' => $request->password
+            ]
+        ];
 
-                try {
-                    $response = Http::withOptions(['verify' => false])
-                        ->post($biostarUrl, $userData);
-                    
-                    if ($response->successful()) { 
-                        $bsSessionId = $response->headers()['bs-session-id'][0];
-                    
-                        return response()->json([
-                            'token' => $token,
-                            'user' => $user,
-                            'bs-session-id' => $bsSessionId,
-                            'status' => 200
-                        ]);
-                    } else {
-                        return response()->json([
-                            'error' => 'Unexpected response from Biostar API',
-                            'response' => $response
-                        ], $response->status());
-                    }
-                } catch (\Exception $e) {
-                    return response()->json([
-                        'error' => $e->getMessage(),
-                    ], 500);
-                }
+        $biostarUrl = 'https://10.150.20.173/api/login';
+
+        try {
+            $response = Http::withOptions(['verify' => false])
+                ->post($biostarUrl, $userData);
+
+            if ($response->successful()) {
+                $bsSessionId = $response->header('bs-session-id');
+
+                return response()->json([
+                    'status' => 200,
+                    'token' => $token,
+                    'user' => $user,
+                    'bs-session-id' => $bsSessionId
+                ]);
             } else {
                 return response()->json([
-                    'status' => 401,
-                    'message' => 'Password is incorrect'
-                ]);
+                    'status' => $response->status(),
+                    'error' => 'Unexpected response from Biostar API',
+                    'response' => $response->json()
+                ], $response->status());
             }
-        } else {
+        } catch (\Exception $e) {
             return response()->json([
-                'status' => 404,
-                'message' => 'Username not found'
-            ]);
+                'status' => 500,
+                'error' => 'An error occurred while trying to connect to the Biostar API.',
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
+
 
 
     public function logout(Request $request)

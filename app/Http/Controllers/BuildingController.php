@@ -130,8 +130,55 @@ class BuildingController extends Controller
     {
         $departmentId = $request->department_id;
 
-        $building->departments()->detach($departmentId);
+        // Check if the department is already attached
+        $isAttached = $building->departments()->where('department_id', $departmentId)->exists();
 
-        return response()->json(['message' => 'Department detached successfully']);
+        if ($isAttached) {
+            // Delete existing pivot entry
+            $building->departments()->detach($departmentId);
+        }
+
+        // Attach department (new pivot entry)
+        $building->departments()->attach($departmentId);
+
+        return response()->json(['message' => 'Department updated successfully']);
+    }
+
+
+    public function updateAttachedDepartments(Request $request, Building $building)
+    {
+        $departmentId = $request->department_id;
+
+        $isAttached = $building->departments()->where('department_id', $departmentId)->exists();
+
+        if ($isAttached) {
+            // Update existing pivot entry
+            $building->departments()->updateExistingPivot($departmentId, []);
+
+            return response()->json(['message' => 'Department updated successfully']);
+        } else {
+            return response()->json(['error' => 'Department is not attached to this building.']);
+        }
+    }
+
+
+    public function getBuildingsWithDepartments()
+    {
+        $buildings = Building::with('departments')->get();
+
+        $formattedData = [];
+
+        foreach ($buildings as $building) {
+            foreach ($building->departments as $department) {
+                $formattedData[] = [
+                    'id' => $department->pivot->id,
+                    'department_id' => $department->id,
+                    'building_id' => $building->id,
+                    'department_name' => $department->name,
+                    'building_name' => $building->name,
+                ];
+            }
+        }
+        return response()->json($formattedData);
     }
 }

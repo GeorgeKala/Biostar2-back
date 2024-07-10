@@ -14,6 +14,12 @@ class DepartmentController extends Controller
         return response()->json(['departments' => $departments], 200);
     }
 
+    public function nestedDepartments()
+    {
+        $departments = Department::with('children.children')->whereNull('parent_id')->get();
+        return response()->json(['departments' => $departments], 200);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -49,4 +55,6 @@ class DepartmentController extends Controller
 
         return response()->json(null, 204);
     }
+
+    
 }

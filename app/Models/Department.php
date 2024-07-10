@@ -15,8 +15,19 @@ class Department extends Model
     ];
 
     public function buildings()
+{
+    return $this->belongsToMany(Building::class, 'building_department')
+                ->withPivot('id');
+}
+
+    public function parent()
     {
-        return $this->belongsToMany(Building::class, 'building_department');
+        return $this->belongsTo(Department::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Department::class, 'parent_id');
     }
 
 }
