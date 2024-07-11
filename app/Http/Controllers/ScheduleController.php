@@ -15,11 +15,17 @@ class ScheduleController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|unique:schedules',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'repetition_unit' => 'nullable|integer',
+            'interval' => 'nullable|integer',
+            'comment' => 'nullable|string',
         ]);
 
-        $schedule = Schedule::create($request->all());
+        $schedule = Schedule::create($data);
+
         return response()->json($schedule, 201);
     }
 
@@ -32,6 +38,11 @@ class ScheduleController extends Controller
     {
         $request->validate([
             'name' => 'required|string|unique:schedules,name,' . $schedule->id,
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'repetition_unit' => 'nullable|integer',
+            'interval' => 'nullable|integer',
+            'comment' => 'nullable|string',
         ]);
 
         $schedule->update($request->all());

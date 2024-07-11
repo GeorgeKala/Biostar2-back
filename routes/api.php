@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BuildingController;
+use App\Http\Controllers\CommandTypeController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\GroupController;
@@ -68,7 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('schedules')->group(function () {
         Route::get('/', [ScheduleController::class, 'index']);
-        Route::post('', [ScheduleController::class, 'store']);
+        Route::post('/', [ScheduleController::class, 'store']);
         Route::get('/{schedule}', [ScheduleController::class, 'show']);
         Route::put('/{schedule}', [ScheduleController::class, 'update']);
         Route::patch('/{schedule}', [ScheduleController::class, 'update']);
@@ -78,7 +79,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('groups')->group(function () {
         Route::get('/', [GroupController::class, 'index']);
-        Route::post('', [GroupController::class, 'store']);
+        Route::post('/', [GroupController::class, 'store']);
         Route::get('/{group}', [GroupController::class, 'show']);
         Route::put('/{group}', [GroupController::class, 'update']);
         Route::patch('/{group}', [GroupController::class, 'update']);
@@ -101,6 +102,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{user}', [UserController::class, 'show']);
         Route::put('/{user}', [UserController::class, 'update']);
         Route::delete('/{user}', [UserController::class, 'destroy']);
+    });
+
+    Route::prefix('command-types')->group(function () {
+        Route::post('/', [CommandTypeController::class, 'store']);
+        Route::get('/', [CommandTypeController::class, 'index']);
+        Route::get('/{id}', [CommandTypeController::class, 'show']);
+        Route::put('/{id}', [CommandTypeController::class, 'update']);
+        Route::delete('/{id}', [CommandTypeController::class, 'destroy']);
     });
     
 });

@@ -68,6 +68,7 @@ class BuildingController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
+
     public function update(Request $request, $id)
     {
         $building = Building::find($id);
@@ -96,6 +97,7 @@ class BuildingController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
+
     public function destroy($id)
     {
         $building = Building::find($id);
@@ -126,22 +128,14 @@ class BuildingController extends Controller
      * @param Building $building
      * @return \Illuminate\Http\JsonResponse
      */
+    
     public function detachDepartments(Request $request, Building $building)
     {
         $departmentId = $request->department_id;
 
-        // Check if the department is already attached
-        $isAttached = $building->departments()->where('department_id', $departmentId)->exists();
+        $building->departments()->detach($departmentId);
 
-        if ($isAttached) {
-            // Delete existing pivot entry
-            $building->departments()->detach($departmentId);
-        }
-
-        // Attach department (new pivot entry)
-        $building->departments()->attach($departmentId);
-
-        return response()->json(['message' => 'Department updated successfully']);
+        return response()->json(['message' => 'Department detached successfully']);
     }
 
 
@@ -152,7 +146,6 @@ class BuildingController extends Controller
         $isAttached = $building->departments()->where('department_id', $departmentId)->exists();
 
         if ($isAttached) {
-            // Update existing pivot entry
             $building->departments()->updateExistingPivot($departmentId, []);
 
             return response()->json(['message' => 'Department updated successfully']);
