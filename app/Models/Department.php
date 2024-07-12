@@ -15,10 +15,10 @@ class Department extends Model
     ];
 
     public function buildings()
-{
-    return $this->belongsToMany(Building::class, 'building_department')
-                ->withPivot('id');
-}
+    {
+        return $this->belongsToMany(Building::class, 'building_department')
+                    ->withPivot('id');
+    }
 
     public function parent()
     {

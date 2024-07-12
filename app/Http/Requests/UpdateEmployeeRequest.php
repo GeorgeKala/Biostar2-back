@@ -35,6 +35,8 @@ class UpdateEmployeeRequest extends FormRequest
             'device' => 'sometimes|string',
             'card_number' => 'sometimes|string',
             'checksum' => 'sometimes|string',
+            'holidays' => 'array', 
+            'holidays.*' => 'exists:holidays,id',
         ];
     }
 }

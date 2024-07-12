@@ -42,4 +42,10 @@ class Employee extends Model
     {
         return $this->belongsTo(Schedule::class);
     }
+    
+
+    public function holidays()
+    {
+        return $this->belongsToMany(Holiday::class);
+    }
 }

@@ -30,81 +30,86 @@ class EmployeeController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(EmployeeRequest $request)
-{
-    
-    $biostarUrl = 'https://10.150.20.173/api/users';
-
-    try {
-        $userIdResponse = Http::withOptions(['verify' => false])
-            ->withHeaders([
-                "bs-session-id" => $request->session_id
-            ])
-            ->get('https://10.150.20.173/api/users/next_user_id');
-
-        if ($userIdResponse->successful()) {
-            $userId = $userIdResponse->json()['User']['user_id'];
-        } else {
-            return response()->json(['error' => 'Failed to fetch user ID'], $userIdResponse->status());
-        }
-
-        DB::beginTransaction();
+    {
+        
+        $biostarUrl = 'https://10.150.20.173/api/users';
 
         try {
-            $validated = $request->validated();
-
-            $employee = new Employee();
-            $employee->id = $userId;
-            $employee->fill($validated);
-            $employee->save();
-
-            $biostarUserData = [
-                'User' => [
-                    'user_id' =>  $userId,
-                    'start_datetime' => '2001-01-01T00:00:00.00Z',
-                    'expiry_datetime' => '2030-12-31T23:59:00.00Z',
-                    'name' => $employee->fullname,
-                    'email' => $employee->id . '@gmail.com',
-                    'permission' => ['id' => '1'],
-                    "login_id" => $employee->id,
-                    "password" => "password",
-                    "user_group_id" => [
-                        "id" => "1"
-                    ],
-                ]
-            ];
-
-            $response = Http::withOptions(['verify' => false])
+            $userIdResponse = Http::withOptions(['verify' => false])
                 ->withHeaders([
                     "bs-session-id" => $request->session_id
                 ])
-                ->post($biostarUrl, $biostarUserData);
+                ->get('https://10.150.20.173/api/users/next_user_id');
 
-            if ($response->successful()) {
-                DB::commit();
-                return response()->json($employee, 201);
+            if ($userIdResponse->successful()) {
+                $userId = $userIdResponse->json()['User']['user_id'];
             } else {
-                DB::rollBack();
-                return response()->json(['error' => 'Unexpected response from Biostar API', 'response' => $response->json()], $response->status());
+                return response()->json(['error' => 'Failed to fetch user ID'], $userIdResponse->status());
             }
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    } catch (RequestException $e) {
-        if ($e->getResponse()) {
-            // $statusCode = $e->getResponse()->status();
-            // $responseBody = $e->getResponse()->json();
-            return response()->json([
-                'error' => $e->getMessage(),
-                'message' => $responseBody['message'] ?? 'Unknown error message',
-            ]);
-        } else {
-            return response()->json([
-                'error' => $e->getMessage(),
-            ], 500);
+
+            DB::beginTransaction();
+
+            try {
+                $validated = $request->validated();
+
+                $employee = new Employee();
+                $employee->id = $userId;
+                $employee->fill($validated);
+                $employee->save();
+
+                if (isset($validated['holidays'])) {
+                    $employee->holidays()->attach($validated['holidays']);
+                }
+
+                $biostarUserData = [
+                    'User' => [
+                        'user_id' =>  $userId,
+                        'start_datetime' => '2001-01-01T00:00:00.00Z',
+                        'expiry_datetime' => '2030-12-31T23:59:00.00Z',
+                        'name' => $employee->fullname,
+                        'email' => $employee->id . '@gmail.com',
+                        'permission' => ['id' => '1'],
+                        "login_id" => $employee->id,
+                        "password" => "password",
+                        "user_group_id" => [
+                            "id" => "1"
+                        ],
+                    ]
+                ];
+
+                $response = Http::withOptions(['verify' => false])
+                    ->withHeaders([
+                        "bs-session-id" => $request->session_id
+                    ])
+                    ->post($biostarUrl, $biostarUserData);
+                    
+
+                if ($response->successful()) {
+                    DB::commit();
+                    return response()->json($employee, 201);
+                } else {
+                    DB::rollBack();
+                    return response()->json(['error' => 'Unexpected response from Biostar API', 'response' => $response->json()], $response->status());
+                }
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json(['error' => $e->getMessage()], 500);
+            }
+        } catch (RequestException $e) {
+            if ($e->getResponse()) {
+                // $statusCode = $e->getResponse()->status();
+                // $responseBody = $e->getResponse()->json();
+                return response()->json([
+                    'error' => $e->getMessage(),
+                    'message' => $responseBody['message'] ?? 'Unknown error message',
+                ]);
+            } else {
+                return response()->json([
+                    'error' => $e->getMessage(),
+                ], 500);
+            }
         }
     }
-}
 
     /**
      * Display the specified employee.
@@ -131,10 +136,14 @@ class EmployeeController extends Controller
 
         try {
             $validated = $request->validated();
-            
-
             $employee->fill($validated);
             $employee->save();
+
+            if (isset($validated['holidays'])) {
+                $employee->holidays()->sync($validated['holidays']);
+            } else {
+                $employee->holidays()->detach();
+            }
 
             $biostarUrl = 'https://10.150.20.173/api/users/' . $employee->id;
 

@@ -5,23 +5,16 @@ use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\CommandTypeController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\GetHolidaysController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserTypeController;
+use App\Http\Controllers\ForgiveTypesController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
+
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -110,6 +103,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{id}', [CommandTypeController::class, 'show']);
         Route::put('/{id}', [CommandTypeController::class, 'update']);
         Route::delete('/{id}', [CommandTypeController::class, 'destroy']);
+    });
+
+    Route::get('/holidays', GetHolidaysController::class);
+
+    Route::prefix('forgive-types')->group(function () {
+        Route::get('/', [ForgiveTypesController::class, 'index']);
+        Route::post('/', [ForgiveTypesController::class, 'store']);
+        Route::get('/{forgiveType}', [ForgiveTypesController::class, 'show']);
+        Route::put('/{forgiveType}', [ForgiveTypesController::class, 'update']);
+        Route::delete('/{forgiveType}', [ForgiveTypesController::class, 'destroy']);
     });
     
 });

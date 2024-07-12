@@ -16,7 +16,8 @@ class DatabaseSeeder extends Seeder
             UserTypesSeeder::class,
             UserSeeder::class,
             BuildingSeeder::class,
-            DepartmentSeeder::class
+            DepartmentSeeder::class,
+            HolidaySeeder::class
         ]);
     }
 }

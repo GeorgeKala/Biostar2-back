@@ -36,6 +36,8 @@ class EmployeeRequest extends FormRequest
             'device' => 'nullable|string',
             'card_number' => 'required|string',
             'checksum' => 'required|string',
+            'holidays' => 'required|array', 
+            'holidays.*' => 'exists:holidays,id',
         ];
     }
 }
