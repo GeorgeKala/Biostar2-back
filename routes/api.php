@@ -4,6 +4,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\CommandTypeController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\DeviceContoller;
+use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\GetHolidaysController;
 use App\Http\Controllers\GroupController;
@@ -114,6 +116,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{forgiveType}', [ForgiveTypesController::class, 'update']);
         Route::delete('/{forgiveType}', [ForgiveTypesController::class, 'destroy']);
     });
+
+    Route::get('/devices', [DeviceController::class, 'fetchDeviceData']);
+    Route::post('/devices/{device_id}/scan_card', [DeviceController::class, 'scanCard']);
+
+
+
+    Route::post('/make-card', [EmployeeController::class, 'makeCard']);
     
 });
 

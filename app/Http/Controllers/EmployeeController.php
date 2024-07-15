@@ -9,6 +9,7 @@ use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class EmployeeController extends Controller
 {
@@ -19,7 +20,7 @@ class EmployeeController extends Controller
      */
     public function index()
     {
-        $employees = Employee::with('department', 'group', 'schedule')->get();
+        $employees = Employee::with('department', 'group', 'schedule', 'holidays')->get();
         return response()->json($employees);
     }
 
@@ -82,11 +83,13 @@ class EmployeeController extends Controller
                         "bs-session-id" => $request->session_id
                     ])
                     ->post($biostarUrl, $biostarUserData);
-                    
+                   
 
                 if ($response->successful()) {
+                    $card_id = $this->makeCard($request->card_number, $request->session_id);
+                    $final_result = $this->updateUserCards($userId, $card_id, $request->session_id );
                     DB::commit();
-                    return response()->json($employee, 201);
+                    return response()->json($final_result, 201);
                 } else {
                     DB::rollBack();
                     return response()->json(['error' => 'Unexpected response from Biostar API', 'response' => $response->json()], $response->status());
@@ -132,6 +135,7 @@ class EmployeeController extends Controller
 
     public function update(UpdateEmployeeRequest $request, Employee $employee)
     {
+
         DB::beginTransaction();
 
         try {
@@ -139,6 +143,7 @@ class EmployeeController extends Controller
             $employee->fill($validated);
             $employee->save();
 
+            // return $validated;
             if (isset($validated['holidays'])) {
                 $employee->holidays()->sync($validated['holidays']);
             } else {
@@ -149,24 +154,18 @@ class EmployeeController extends Controller
 
             $biostarUserData = [
                 'User' => [
-                    'start_datetime' => $validated['start_datetime'] ?? '2001-01-01T00:00:00.00Z',
-                    'expiry_datetime' => $validated['expiry_datetime'] ?? '2030-12-31T23:59:00.00Z',
-                    'name' => $validated['fullname'] ?? 'Unknown',
-                    // 'email' => $employee->id . '@gmail.com',
-                    'permission' => ['id' => '3'],
-                    // 'login_id' => $employee->id,
-                    // 'password' => 'password',
-                    // 'user_group_id' => ['id' => '1'],
+                    'name' =>  $validated['fullname'],
+                    
                 ]
             ];
-
             $response = Http::withOptions(['verify' => false])
                 ->withHeaders([
                     "bs-session-id" => $request->session_id
                 ])
                 ->put($biostarUrl, $biostarUserData);
-
+                
             if ($response->successful()) {
+                
                 DB::commit();
                 return response()->json($employee);
             } else {
@@ -222,4 +221,81 @@ class EmployeeController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+
+
+    private function makeCard($iterIDVal, $bsSessionId)
+    {
+        $url = 'https://10.150.20.173/api/cards';
+
+        $payload = [
+            'CardCollection' => [
+                'rows' => [
+                    [
+                        'card_id' => $iterIDVal,
+                        'card_type' => [
+                            'id' => '1',
+                            'name' => '',
+                            'type' => '10'
+                            
+                        ],
+                        'wiegand_format_id' => [
+                            'id'=> '0'
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withOptions(['verify' => false])
+                ->withHeaders([
+                    'bs-session-id' => $bsSessionId
+                ])
+                ->post($url, $payload);
+
+            if ($response->successful()) {
+                
+                return $response->json()['CardCollection']['rows'][0]['id'];
+            } else {
+                throw new \Exception('Failed to make card request: ' . $response->status());
+            }
+        } catch (\Exception $e) {
+            throw new \Exception('Error making card request: ' . $e->getMessage());
+        }
+    }
+
+    private function updateUserCards($userId, $iterIDVal, $bsSessionId)
+    {
+        $baseUrl = config('services.biostar.base_url'); 
+        $url = "/https://10.150.20.173/api/users/{$userId}";
+
+        $payload = [
+            'User' => [
+                'cards' => [
+                    [
+                        'id' => $iterIDVal
+                    ]
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withOptions(['verify' => false])
+                ->withHeaders([
+                    'bs-session-id' => $bsSessionId,
+                    'Content-Type' => 'application/json',
+                ])
+                ->put($url, $payload);
+
+            if ($response->successful()) {
+                return $response->json();
+            } else {
+                throw new \Exception('Failed to update user cards: ' . $response->status());
+            }
+        } catch (\Exception $e) {
+            throw new \Exception('Error updating user cards: ' . $e->getMessage());
+        }
+    }
+
 }
