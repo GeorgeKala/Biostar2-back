@@ -17,7 +17,8 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             BuildingSeeder::class,
             DepartmentSeeder::class,
-            HolidaySeeder::class
+            HolidaySeeder::class,
+            ScheduleSeeder::class,
         ]);
     }
 }

@@ -16,6 +16,8 @@ class Schedule extends Model
         'repetition_unit',
         'interval',
         'comment',
+        'day_start',
+        'day_end',
     ];
 
     

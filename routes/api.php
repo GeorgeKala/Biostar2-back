@@ -15,8 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserTypeController;
 use App\Http\Controllers\ForgiveTypesController;
-
-
+use App\Http\Controllers\ReportController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -120,9 +119,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/devices', [DeviceController::class, 'fetchDeviceData']);
     Route::post('/devices/{device_id}/scan_card', [DeviceController::class, 'scanCard']);
 
-
-
     Route::post('/make-card', [EmployeeController::class, 'makeCard']);
+
+    Route::post('/reports/login', [ReportController::class, 'login']);
+    Route::post('/reports/monthly', [ReportController::class, 'getMonthlyReports']);
     
 });
 

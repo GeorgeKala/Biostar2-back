@@ -22,6 +22,8 @@ class ScheduleController extends Controller
             'repetition_unit' => 'nullable|integer',
             'interval' => 'nullable|integer',
             'comment' => 'nullable|string',
+            'day_start' => 'nullable|date_format:H:i',
+            'day_end' => 'nullable|date_format:H:i',
         ]);
 
         $schedule = Schedule::create($data);
@@ -36,16 +38,19 @@ class ScheduleController extends Controller
 
     public function update(Request $request, Schedule $schedule)
     {
-        $request->validate([
+        $data = $request->validate([
             'name' => 'required|string|unique:schedules,name,' . $schedule->id,
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
             'repetition_unit' => 'nullable|integer',
             'interval' => 'nullable|integer',
             'comment' => 'nullable|string',
+            'day_start' => 'nullable|date_format:H:i',
+            'day_end' => 'nullable|date_format:H:i',
         ]);
 
-        $schedule->update($request->all());
+        $schedule->update($data);
+
         return response()->json($schedule);
     }
 

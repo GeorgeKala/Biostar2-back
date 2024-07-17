@@ -87,7 +87,7 @@ class EmployeeController extends Controller
 
                 if ($response->successful()) {
                     $card_id = $this->makeCard($request->card_number, $request->session_id);
-                    $final_result = $this->updateUserCards($userId, $card_id, $request->session_id );
+                    $final_result = $this->updateUserCards($userId, $card_id, $request->session_id);
                     DB::commit();
                     return response()->json($final_result, 201);
                 } else {
@@ -100,8 +100,6 @@ class EmployeeController extends Controller
             }
         } catch (RequestException $e) {
             if ($e->getResponse()) {
-                // $statusCode = $e->getResponse()->status();
-                // $responseBody = $e->getResponse()->json();
                 return response()->json([
                     'error' => $e->getMessage(),
                     'message' => $responseBody['message'] ?? 'Unknown error message',
@@ -143,7 +141,6 @@ class EmployeeController extends Controller
             $employee->fill($validated);
             $employee->save();
 
-            // return $validated;
             if (isset($validated['holidays'])) {
                 $employee->holidays()->sync($validated['holidays']);
             } else {
@@ -154,8 +151,7 @@ class EmployeeController extends Controller
 
             $biostarUserData = [
                 'User' => [
-                    'name' =>  $validated['fullname'],
-                    
+                    'name' =>  $validated['fullname'],  
                 ]
             ];
             $response = Http::withOptions(['verify' => false])
@@ -267,7 +263,7 @@ class EmployeeController extends Controller
 
     private function updateUserCards($userId, $iterIDVal, $bsSessionId)
     {
-        $baseUrl = config('services.biostar.base_url'); 
+        
         $url = "/https://10.150.20.173/api/users/{$userId}";
 
         $payload = [
