@@ -48,4 +48,10 @@ class Employee extends Model
     {
         return $this->belongsToMany(Holiday::class);
     }
+    
+
+    public function dayDetails()
+    {
+        return $this->hasMany(EmployeeDayDetail::class);
+    }
 }
