@@ -14,7 +14,8 @@ class EmployeeDayDetail extends Model
         'date',
         'day_type_id',
         'comment',
-        'forgive_type_id'
+        'forgive_type_id', 
+        'user_id'
     ];
 
     public function employee()
@@ -30,5 +31,10 @@ class EmployeeDayDetail extends Model
     public function forgiveType()
     {
         return $this->belongsTo(ForgiveType::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

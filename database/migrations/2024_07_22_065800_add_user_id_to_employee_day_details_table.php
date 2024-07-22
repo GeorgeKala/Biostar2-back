@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('employee_day_details', function (Blueprint $table) {
-            $table->unsignedBigInteger('forgive_type_id')->nullable();
+            $table->unsignedBigInteger('user_id')->nullable()->after('forgive_type_id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
         });
     }
 
@@ -22,7 +23,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('employee_day_details', function (Blueprint $table) {
-            $table->dropColumn('forgive_type_id'); 
+            $table->dropForeign(['user_id']);
+            $table->dropColumn('user_id');
         });
     }
 };

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\CommandTypeController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\EmployeeController;
@@ -121,9 +122,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/reports/login', [ReportController::class, 'login']);
     Route::post('/reports/monthly', [ReportController::class, 'getMonthlyReports']);
-    
+
     Route::post('/employee-day-detail', [ReportController::class, 'updateOrCreateDayDetail']);
     Route::post('/employee-day-detail/update-day-type', [ReportController::class, 'updateDayTypeForDateRange']);
+
+    Route::post('/fetch-report', [ReportController::class, 'fetchReport']);
+
+    Route::post('/commented-details', [CommentController::class, 'fetchCommentedDetails']);
+    Route::post('/employee-orders', [CommentController::class, 'fetchOrders']);
 
     
 });

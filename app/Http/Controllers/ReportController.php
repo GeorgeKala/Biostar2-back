@@ -315,6 +315,11 @@ class ReportController extends Controller
             $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
             $endDate = $request->input('end_date', now()->endOfMonth()->format('Y-m-d'));
 
+            $today = now()->format('Y-m-d');
+            if ($endDate > $today) {
+                $endDate = $today;
+            }
+
             $startDateTime = (new \DateTime($startDate))->format('Y-m-d\T00:00:00.000\Z');
             $endDateTime = (new \DateTime($endDate))->format('Y-m-d\T23:59:59.999\Z');
 
@@ -467,7 +472,8 @@ class ReportController extends Controller
                                 $employeeData['leave_early'] = $leaveEarlyInterval ? $leaveEarlyInterval->format('%H:%I:%S') : null;
 
                                 $interval = $comeTime->diff($leaveTime);
-                                $employeeData['worked_hours'] = $interval->format('%H:%I:%S');
+                                $workedHours = $interval->h + ($interval->i / 60) + ($interval->s / 3600);
+                                $employeeData['worked_hours'] += number_format($workedHours, 2);
 
                                 $employeeData['penalized_time'] = 0;
 
@@ -503,11 +509,6 @@ class ReportController extends Controller
     }
 
 
-
-
-/**
- * Create an array of dates between two dates
- */
     private function createDateRangeArray($start, $end)
     {
         $startDate = new \DateTime($start);
@@ -547,6 +548,8 @@ class ReportController extends Controller
                 $comment = '(' . $forgiveTypeName . ') ' . $comment;
             }
 
+            $userId = auth()->user()->id;
+
             $dayDetail = EmployeeDayDetail::updateOrCreate(
                 [
                     'employee_id' => $validatedData['employee_id'],
@@ -556,12 +559,12 @@ class ReportController extends Controller
                     'day_type_id' => $validatedData['day_type_id'] ?? null,
                     'forgive_type_id' => $validatedData['forgive_type_id'] ?? null, 
                     'comment' => $comment,
+                    'user_id' => $userId,
                 ]
             );
 
             return response()->json($dayDetail);
-                 
-            
+                
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -570,6 +573,7 @@ class ReportController extends Controller
             ], 500);
         }
     }
+
 
 
     public function updateDayTypeForDateRange(Request $request)
@@ -604,6 +608,249 @@ class ReportController extends Controller
             ], 500);
         }
     }
+
+
+
+    // public function fetchReport(Request $request)
+    // {
+    //     try {
+    //         $url = 'https://10.150.20.173:3002/tna/report.json';
+
+    //         $sessionId = $request->header('Bs-Session-Id');
+
+    //         $sessionId = "bs-ta-session-id={$sessionId}";
+            
+
+    //         $body = [
+    //             "type" => "CUSTOM",
+    //             "report_type" => "REPORT_DAILY",
+    //             "limit" => 100,
+    //             "offset" => 0,
+    //             "rebuild_time_card" => true,
+    //             "start_datetime" => "2024-07-20",
+    //             "end_datetime" => "2024-07-22",
+    //             "group_id_list" => ["1"],
+    //             "columns" => [
+    //                 ["field" => "userName"],
+    //                 ["field" => "datetime"]
+    //             ]
+    //         ];
+
+    //         $response = Http::withOptions(['verify' => false])
+    //                         ->withHeaders(['Cookie' => $sessionId])
+    //                         ->post($url, $body);
+
+    //         if ($response->successful()) {
+    //             $reportData = $response->json();
+    //             return response()->json($reportData);
+    //         } else {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Failed to fetch report',
+    //                 'error' => $response->body()
+    //             ], $response->status());
+    //         }
+            
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Failed to fetch report',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
+
+
+
+
+    public function fetchReport(Request $request)
+    {
+        try {
+            $url = 'https://10.150.20.173:3002/tna/report.json';
+
+            $sessionId = $request->header('Bs-Session-Id');
+            $sessionId = "bs-ta-session-id={$sessionId}";
+
+            $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
+            $endDate = $request->input('end_date', now()->endOfMonth()->format('Y-m-d'));
+
+            $today = now()->format('Y-m-d');
+            if ($endDate > $today) {
+                $endDate = $today;
+            }
+
+            $departmentId = $request->input('department_id');
+            $employeeId = $request->input('employee_id');
+            
+            $body = [
+                "type" => "CUSTOM",
+                "report_type" => "REPORT_DAILY",
+                "limit" => 100,
+                "offset" => 0,
+                "rebuild_time_card" => true,
+                "start_datetime" => $startDate,
+                "end_datetime" => $endDate,
+                "group_id_list" => ["1"],
+                "columns" => [
+                    ["field" => "userName"],
+                    ["field" => "datetime"]
+                ]
+            ];
+
+            $response = Http::withOptions(['verify' => false])
+                            ->withHeaders(['Cookie' => $sessionId])
+                            ->post($url, $body);
+
+            if ($response->successful()) {
+                $reportData = $response->json();
+
+                $employeesQuery = \App\Models\Employee::with('schedule', 'department', 'dayDetails.dayType', 'holidays');
+
+                if ($departmentId) {
+                    $employeesQuery->where('department_id', $departmentId);
+                }
+
+                if ($employeeId) {
+                    $employeesQuery->where('id', $employeeId);
+                }
+
+                $employees = $employeesQuery->get();
+                $englishToGeorgianWeekdays = [
+                    'Monday' => 'ორშაბათი',
+                    'Tuesday' => 'სამშაბათი',
+                    'Wednesday' => 'ოთხშაბათი',
+                    'Thursday' => 'ხუთშაბათი',
+                    'Friday' => 'პარასკევი',
+                    'Saturday' => 'შაბათი',
+                    'Sunday' => 'კვირა',
+                ];
+
+                $combinedData = [];
+
+                foreach ($reportData['records'] as $report) {
+                    $employee = $employees->firstWhere('id', $report['userId']);
+                    if ($employee) {
+                        $weekDayEnglish = date('l', strtotime($report['datetime']));
+                        $weekDayGeorgian = $englishToGeorgianWeekdays[$weekDayEnglish];
+
+                        // Ensure shift times are in the correct format
+                        $shiftStart = null;
+                        $shiftEnd = null;
+                        $shiftTimes = explode('-', $report['shift']);
+                        if (count($shiftTimes) === 2 && ($shiftTimes[0]) && ($shiftTimes[1])) {
+                            $shiftStart = \Carbon\Carbon::createFromFormat('H:i', trim($shiftTimes[0] . ':00'));
+                            $shiftEnd = \Carbon\Carbon::createFromFormat('H:i', trim($shiftTimes[1] . ':00'));
+                        }
+
+                    
+
+                        $comeTime = null;
+                        $leaveTime = null;
+                        try {
+                            $comeTime = \Carbon\Carbon::createFromFormat('H:i:s', $report['inTime']);
+                            $leaveTime = \Carbon\Carbon::createFromFormat('H:i:s', $report['outTime']);
+                        } catch (\Exception $e) {
+                        
+                        }
+
+                        // $comeLateInterval = $comeTime && $shiftStart && $comeTime->greaterThan($shiftStart) ? $shiftStart->diff($comeTime) : null;
+                        // $comeEarlyInterval = $comeTime && $shiftStart && $comeTime->lessThan($shiftStart) ? $shiftStart->diff($comeTime) : null;
+                        // $leaveLateInterval = $leaveTime && $shiftEnd && $leaveTime->greaterThan($shiftEnd) ? $shiftEnd->diff($leaveTime) : null;
+                        // $leaveEarlyInterval = $leaveTime && $shiftEnd && $leaveTime->lessThan($shiftEnd) ? $shiftEnd->diff($leaveTime) : null;
+
+                    
+
+                        $comeLate = $comeTime && $shiftStart && $comeTime->greaterThan($shiftStart) ? $comeTime->diffInMinutes($shiftStart) : null;
+                        $comeEarly = $comeTime && $shiftStart && $comeTime->lessThan($shiftStart) ? $shiftStart->diffInMinutes($comeTime) : null;
+                        $leaveLate = $leaveTime && $shiftEnd && $leaveTime->greaterThan($shiftEnd) ? $leaveTime->diffInMinutes($shiftEnd) : null;
+                        $leaveEarly = $leaveTime && $shiftEnd && $leaveTime->lessThan($shiftEnd) ? $shiftEnd->diffInMinutes($leaveTime) : null;
+
+
+
+                        
+                        $workedHours = $comeTime && $leaveTime ? $leaveTime->diffInMinutes($comeTime) / 60 : null;
+                        $workedHours = $workedHours !== null ? number_format($workedHours, 2) : null;
+
+                        $penalizedTime = ($comeLate ?? 0) + ($leaveEarly ?? 0);
+
+                        $employeeData = [
+                            'user_id' => $employee->id,
+                            'fullname' => $employee->fullname,
+                            'department' => $employee->department ? $employee->department->name : null,
+                            'position' => $employee->position,
+                            'schedule' => $report['shift'],
+                            'homorable_minutes' => $employee->honorable_minutes_per_day,
+                            'date' => $report['datetime'],
+                            'week_day' => $weekDayGeorgian,
+                            'come_time' => $report['inTime'],
+                            'leave_time' => $report['outTime'],
+                            'come_late' => $comeLate,
+                            'come_early' => $comeEarly,
+                            'leave_late' => $leaveLate,
+                            'leave_early' => $leaveEarly,
+                            'worked_hours' => $workedHours,
+                            'penalized_time' => $penalizedTime,
+                            'final_penalized_time' => max(0, $penalizedTime - $employee->honorable_minutes_per_day),
+                            'day_type' => '',
+                            'comment' => '',
+                            'forgive_type' => ''
+                        ];
+
+                        $dayDetail = $employee->dayDetails->where('date', $report['datetime'])->first();
+                        
+                        if ($dayDetail) {
+                            if ($dayDetail->dayType !== null) {
+                                $employeeData['day_type'] = $dayDetail->dayType ? $dayDetail->dayType->name : '';
+                            } elseif ($employee->holidays->contains('name', $weekDayGeorgian)) {
+                                $employeeData['day_type'] = 'არა სამუშაო დღე';
+                            } else {
+                                $employeeData['day_type'] = 'სამუშაო დღე';
+                            }
+                            $employeeData['comment'] = $dayDetail->comment;
+                            $employeeData['forgive_type'] = $dayDetail->forgiveType ? $dayDetail->forgiveType->name : '';
+                        } else {
+                            if ($employee->holidays->contains('name', $weekDayGeorgian)) {
+                                $employeeData['day_type'] = 'არა სამუშაო დღე';
+                            } else {
+                                $employeeData['day_type'] = 'სამუშაო დღე';
+                            }
+                        }
+
+                        $combinedData[] = $employeeData;
+                    }
+                }
+
+                usort($combinedData, function ($a, $b) {
+                    if ($a['fullname'] === $b['fullname']) {
+                        return strtotime($a['date']) - strtotime($b['date']);
+                    }
+                    return strcmp($a['fullname'], $b['fullname']);
+                });
+
+                return response()->json([
+                    'message' => 'Processed Successfully',
+                    'message_key' => 'SUCCESSFUL',
+                    'language' => 'en',
+                    'status_code' => 'SUCCESSFUL',
+                    'records' => $combinedData
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to fetch report',
+                    'error' => $response->body()
+                ], $response->status());
+            }
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch report',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
 }
 
