@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ForgiveTypes;
+use App\Models\ForgiveType;
 use Illuminate\Http\Request;
 
 class ForgiveTypesController extends Controller
 {
     public function index()
     {
-        return ForgiveTypes::all();
+        return ForgiveType::all();
     }
 
     public function store(Request $request)
@@ -18,17 +18,17 @@ class ForgiveTypesController extends Controller
             'name' => 'required|string|max:255',
         ]);
 
-        $forgiveType = ForgiveTypes::create($request->all());
+        $forgiveType = ForgiveType::create($request->all());
 
         return response()->json($forgiveType, 201);
     }
 
-    public function show(ForgiveTypes $forgiveType)
+    public function show(ForgiveType $forgiveType)
     {
         return $forgiveType;
     }
 
-    public function update(Request $request, ForgiveTypes $forgiveType)
+    public function update(Request $request, ForgiveType $forgiveType)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -39,7 +39,7 @@ class ForgiveTypesController extends Controller
         return response()->json($forgiveType, 200);
     }
 
-    public function destroy(ForgiveTypes $forgiveType)
+    public function destroy(ForgiveType $forgiveType)
     {
         $forgiveType->delete();
 

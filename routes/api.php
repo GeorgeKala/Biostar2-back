@@ -4,7 +4,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\CommandTypeController;
 use App\Http\Controllers\DepartmentController;
-use App\Http\Controllers\DeviceContoller;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\GetHolidaysController;
@@ -20,8 +19,6 @@ use App\Http\Controllers\ReportController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-
-
 
 
 Route::post('/login', [AuthController::class, 'login']);
@@ -116,6 +113,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{forgiveType}', [ForgiveTypesController::class, 'destroy']);
     });
 
+ 
     Route::get('/devices', [DeviceController::class, 'fetchDeviceData']);
     Route::post('/devices/{device_id}/scan_card', [DeviceController::class, 'scanCard']);
 
@@ -123,6 +121,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/reports/login', [ReportController::class, 'login']);
     Route::post('/reports/monthly', [ReportController::class, 'getMonthlyReports']);
+    
+    Route::post('/employee-day-detail', [ReportController::class, 'updateOrCreateDayDetail']);
+    Route::post('/employee-day-detail/update-day-type', [ReportController::class, 'updateDayTypeForDateRange']);
+
     
 });
 
