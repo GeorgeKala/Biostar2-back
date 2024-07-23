@@ -674,10 +674,10 @@ class ReportController extends Controller
             $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
             $endDate = $request->input('end_date', now()->endOfMonth()->format('Y-m-d'));
 
-            $today = now()->format('Y-m-d');
-            if ($endDate > $today) {
-                $endDate = $today;
-            }
+            // $today = now()->format('Y-m-d');
+            // if ($endDate > $today) {
+            //     $endDate = $today;
+            // }
 
             $departmentId = $request->input('department_id');
             $employeeId = $request->input('employee_id');
@@ -704,7 +704,7 @@ class ReportController extends Controller
             if ($response->successful()) {
                 $reportData = $response->json();
 
-                $employeesQuery = \App\Models\Employee::with('schedule', 'department', 'dayDetails.dayType', 'holidays');
+                $employeesQuery = \App\Models\Employee::with('schedule', 'department', 'dayDetails.dayType', 'holidays', 'group');
 
                 if ($departmentId) {
                     $employeesQuery->where('department_id', $departmentId);
@@ -730,10 +730,12 @@ class ReportController extends Controller
                 foreach ($reportData['records'] as $report) {
                     $employee = $employees->firstWhere('id', $report['userId']);
                     if ($employee) {
+                        $group = $employee->group;
+                        $control = $group->control;
+                        $breakControl = $group->break_control;
+                        $leaveControl = $group->leave_control;
                         $weekDayEnglish = date('l', strtotime($report['datetime']));
                         $weekDayGeorgian = $englishToGeorgianWeekdays[$weekDayEnglish];
-
-                        // Ensure shift times are in the correct format
                         $shiftStart = null;
                         $shiftEnd = null;
                         $shiftTimes = explode('-', $report['shift']);
@@ -741,8 +743,6 @@ class ReportController extends Controller
                             $shiftStart = \Carbon\Carbon::createFromFormat('H:i', trim($shiftTimes[0] . ':00'));
                             $shiftEnd = \Carbon\Carbon::createFromFormat('H:i', trim($shiftTimes[1] . ':00'));
                         }
-
-                    
 
                         $comeTime = null;
                         $leaveTime = null;
@@ -752,13 +752,6 @@ class ReportController extends Controller
                         } catch (\Exception $e) {
                         
                         }
-
-                        // $comeLateInterval = $comeTime && $shiftStart && $comeTime->greaterThan($shiftStart) ? $shiftStart->diff($comeTime) : null;
-                        // $comeEarlyInterval = $comeTime && $shiftStart && $comeTime->lessThan($shiftStart) ? $shiftStart->diff($comeTime) : null;
-                        // $leaveLateInterval = $leaveTime && $shiftEnd && $leaveTime->greaterThan($shiftEnd) ? $shiftEnd->diff($leaveTime) : null;
-                        // $leaveEarlyInterval = $leaveTime && $shiftEnd && $leaveTime->lessThan($shiftEnd) ? $shiftEnd->diff($leaveTime) : null;
-
-                    
 
                         $comeLate = $comeTime && $shiftStart && $comeTime->greaterThan($shiftStart) ? $comeTime->diffInMinutes($shiftStart) : null;
                         $comeEarly = $comeTime && $shiftStart && $comeTime->lessThan($shiftStart) ? $shiftStart->diffInMinutes($comeTime) : null;
@@ -771,7 +764,11 @@ class ReportController extends Controller
                         $workedHours = $comeTime && $leaveTime ? $leaveTime->diffInMinutes($comeTime) / 60 : null;
                         $workedHours = $workedHours !== null ? number_format($workedHours, 2) : null;
 
-                        $penalizedTime = ($comeLate ?? 0) + ($leaveEarly ?? 0);
+                        $penalizedTime = 0;
+                        if ($control) {
+                            $penalizedTime += ($comeLate ?? 0);
+                            $penalizedTime += ($comeEarly ?? 0);
+                        }
 
                         $employeeData = [
                             'user_id' => $employee->id,

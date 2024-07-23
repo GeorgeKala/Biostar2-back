@@ -9,9 +9,6 @@ class DeviceController extends Controller
 {
     public function fetchDeviceData(Request $request)
     {
-
-
-        // return $request->header()['bs-session-id'][0];
         
         $sessionId = $request->header()['bs-session-id'][0];
 

@@ -20,7 +20,8 @@ class DatabaseSeeder extends Seeder
             HolidaySeeder::class,
             ScheduleSeeder::class,
             DayTypeSeeder::class,
-            ForgiveTypeSeeder::class
+            ForgiveTypeSeeder::class,
+            GroupSeeder::class,
         ]);
     }
 }

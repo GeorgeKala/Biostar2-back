@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('groups', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
+            $table->boolean('control')->default(false);
+            $table->boolean('break_control')->default(false);
+            $table->boolean('leave_control')->default(false);
             $table->timestamps();
         });
     }

@@ -11,5 +11,8 @@ class Group extends Model
 
     protected $fillable = [
         'name',
+        'control',
+        'break_control',
+        'leave_control'
     ];
 }

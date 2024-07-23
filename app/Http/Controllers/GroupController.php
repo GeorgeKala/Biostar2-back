@@ -17,6 +17,9 @@ class GroupController extends Controller
     {
         $request->validate([
             'name' => 'required|string|unique:groups',
+            'control' => 'required|boolean',
+            'break_control' => 'required|boolean',
+            'leave_control' => 'required|boolean',
         ]);
 
         $group = Group::create($request->all());
@@ -32,6 +35,9 @@ class GroupController extends Controller
     {
         $request->validate([
             'name' => 'required|string|unique:groups,name,' . $group->id,
+            'control' => 'required|boolean',
+            'break_control' => 'required|boolean',
+            'leave_control' => 'required|boolean',
         ]);
 
         $group->update($request->all());
@@ -43,5 +49,6 @@ class GroupController extends Controller
         $group->delete();
         return response()->json(null, 204);
     }
+
 }
 
