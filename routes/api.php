@@ -35,7 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{user_type}', [UserTypeController::class, 'update']);
         Route::delete('/{user_type}', [UserTypeController::class, 'destroy']);
     });
-    
+
 
     Route::prefix('buildings')->group(function () {
         Route::get('/', [BuildingController::class, 'index']);
@@ -49,7 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{building}/detach-department', [BuildingController::class, 'detachDepartments']);
         Route::post('/{building}/update-department', [BuildingController::class, 'updateAttachedDepartments']);
     });
-    
+
 
     Route::prefix('departments')->group(function () {
         Route::get('/', [DepartmentController::class, 'index']);
@@ -89,6 +89,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{employee}', [EmployeeController::class, 'update']);
         Route::patch('/{employee}', [EmployeeController::class, 'update']);
         Route::delete('/{employee}', [EmployeeController::class, 'destroy']);
+        Route::put('/access_groups/{id}', [EmployeeController::class, 'updateAccessGroups']);
     });
 
 
@@ -99,7 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{user}', [UserController::class, 'update']);
         Route::delete('/{user}', [UserController::class, 'destroy']);
     });
-    
+
 
     Route::prefix('command-types')->group(function () {
         Route::post('/', [CommandTypeController::class, 'store']);
@@ -119,7 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{forgiveType}', [ForgiveTypesController::class, 'destroy']);
     });
 
- 
+
     Route::get('/devices', [DeviceController::class, 'fetchDeviceData']);
     Route::post('/devices/{device_id}/scan_card', [DeviceController::class, 'scanCard']);
 
@@ -145,6 +146,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [AccessGroupController::class, 'index']);
     });
 
-    
+
 });
 

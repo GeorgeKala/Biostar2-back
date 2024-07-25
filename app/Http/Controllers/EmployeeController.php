@@ -30,10 +30,10 @@ class EmployeeController extends Controller
      * @param  \App\Http\Requests\EmployeeRequest  $request
      * @return \Illuminate\Http\Response
      */
-    
+
     public function store(EmployeeRequest $request)
     {
-        
+
         $biostarUrl = 'https://10.150.20.173/api/users';
 
         try {
@@ -64,15 +64,16 @@ class EmployeeController extends Controller
                 }
 
 
-                $department = $employee->department; 
-                $accessGroups = $department ? $department->access_groups : [];
-                $formattedAccessGroups = array_map(function ($groupId) {
-                    return ['id' => $groupId];
-                }, $accessGroups);
+                $department = $employee->department;
+                if ($department && $department->buildings) {
+                    $accessGroups = $department->buildings->pluck('access_group')->unique();
+                    $formattedAccessGroups = $accessGroups->map(function ($groupId) {
+                        return ['id' => $groupId];
+                    })->values();
+                } else {
+                    $formattedAccessGroups = [];
+                }
 
-                
-
-              
 
                 $biostarUserData = [
                     'User' => [
@@ -96,7 +97,7 @@ class EmployeeController extends Controller
                         "bs-session-id" => $request->session_id
                     ])
                     ->post($biostarUrl, $biostarUserData);
-                   
+
 
                 if ($response->successful()) {
                     $card_id = $this->makeCard($request->card_number, $request->session_id);
@@ -164,7 +165,7 @@ class EmployeeController extends Controller
 
             $biostarUserData = [
                 'User' => [
-                    'name' =>  $validated['fullname'],  
+                    'name' =>  $validated['fullname'],
                 ]
             ];
             $response = Http::withOptions(['verify' => false])
@@ -172,9 +173,9 @@ class EmployeeController extends Controller
                     "bs-session-id" => $request->session_id
                 ])
                 ->put($biostarUrl, $biostarUserData);
-                
+
             if ($response->successful()) {
-                
+
                 DB::commit();
                 return response()->json($employee);
             } else {
@@ -193,7 +194,7 @@ class EmployeeController extends Controller
      * @param  \App\Models\Employee  $employee
      * @return \Illuminate\Http\Response
      */
-    
+
     public function destroy(Employee $employee, Request $request)
     {
         $biostarUrl = 'https://10.150.20.173/api/users/' . $employee->id;
@@ -247,7 +248,7 @@ class EmployeeController extends Controller
                             'id' => '1',
                             'name' => '',
                             'type' => '10'
-                            
+
                         ],
                         'wiegand_format_id' => [
                             'id'=> '0'
@@ -265,7 +266,7 @@ class EmployeeController extends Controller
                 ->post($url, $payload);
 
             if ($response->successful()) {
-                
+
                 return $response->json()['CardCollection']['rows'][0]['id'];
             } else {
                 throw new \Exception('Failed to make card request: ' . $response->status());
@@ -278,7 +279,7 @@ class EmployeeController extends Controller
 
     private function updateUserCards($userId, $iterIDVal, $bsSessionId)
     {
-        
+
         $url = "/https://10.150.20.173/api/users/{$userId}";
 
         $payload = [
@@ -388,6 +389,38 @@ class EmployeeController extends Controller
                 return response()->json($result);
             } else {
                 return response()->json(['error' => 'Failed to fetch events', 'response' => $response->json()], $response->status());
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+
+    public function updateAccessGroups(Request $request, $id)
+    {
+        $url = 'https://10.150.20.173/api/access_groups/' . $id;
+
+        $payload = [
+            'AccessGroup' => [
+                'new_users' => [
+                    [
+                        'user_id' => $request->input('user_id')
+                    ]
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withOptions(['verify' => false])
+                ->withHeaders([
+                    'bs-session-id' => $request->header('bs-session-id')
+                ])
+                ->put($url, $payload);
+
+            if ($response->successful()) {
+                return response()->json($response->json(), 200);
+            } else {
+                return response()->json(['error' => 'Failed to update access group', 'response' => $response->json()], $response->status());
             }
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);

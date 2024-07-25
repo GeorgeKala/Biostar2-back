@@ -9,20 +9,17 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
         Schema::table('buildings', function (Blueprint $table) {
-            $table->json('devices')->nullable();
+            $table->integer('access_group')->nullable();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::table('buildings', function (Blueprint $table) {
-            $table->dropColumn('devices');
+            $table->dropColumn('access_group');
         });
     }
 };
