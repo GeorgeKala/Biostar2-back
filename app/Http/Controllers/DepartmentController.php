@@ -2,21 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Department;
+use Illuminate\Http\Request;
 
 class DepartmentController extends Controller
 {
     public function index()
     {
         $departments = Department::all();
+
         return response()->json(['departments' => $departments], 200);
     }
 
     public function nestedDepartments()
     {
         $departments = Department::with('children')->whereNull('parent_id')->get();
+
         return response()->json(['departments' => $departments], 200);
     }
 
@@ -24,7 +25,7 @@ class DepartmentController extends Controller
     {
         $request->validate([
             'name' => 'required|string',
-            'parent_id' => 'nullable|exists:departments,id'
+            'parent_id' => 'nullable|exists:departments,id',
         ]);
 
         $department = Department::create($request->all());
@@ -41,7 +42,7 @@ class DepartmentController extends Controller
     {
         $request->validate([
             'name' => 'required|string',
-            'parent_id' => 'nullable|exists:departments,id'
+            'parent_id' => 'nullable|exists:departments,id',
         ]);
 
         $department->update($request->all());
@@ -56,13 +57,12 @@ class DepartmentController extends Controller
         return response()->json(null, 204);
     }
 
-
     public function addAccessGroups(Request $request)
     {
         $request->validate([
             'department_id' => 'required|exists:departments,id',
             'access_groups' => 'required|array',
-            'access_groups.*' => 'integer'
+            'access_groups.*' => 'integer',
         ]);
 
         $department = Department::find($request->department_id);
@@ -73,5 +73,4 @@ class DepartmentController extends Controller
 
         return response()->json(['department' => $department], 200);
     }
-    
 }

@@ -8,20 +8,19 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\ForgiveTypesController;
 use App\Http\Controllers\GetHolidaysController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserTypeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UserTypeController;
-use App\Http\Controllers\ForgiveTypesController;
-use App\Http\Controllers\ReportController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
-
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -36,7 +35,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{user_type}', [UserTypeController::class, 'destroy']);
     });
 
-
     Route::prefix('buildings')->group(function () {
         Route::get('/', [BuildingController::class, 'index']);
         Route::get('/nested', [BuildingController::class, 'nestedBuildings']);
@@ -50,7 +48,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{building}/update-department', [BuildingController::class, 'updateAttachedDepartments']);
     });
 
-
     Route::prefix('departments')->group(function () {
         Route::get('/', [DepartmentController::class, 'index']);
         Route::get('/nested', [DepartmentController::class, 'nestedDepartments']);
@@ -61,7 +58,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/add-access-groups', [DepartmentController::class, 'addAccessGroups']);
     });
 
-
     Route::prefix('schedules')->group(function () {
         Route::get('/', [ScheduleController::class, 'index']);
         Route::post('/', [ScheduleController::class, 'store']);
@@ -70,7 +66,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/{schedule}', [ScheduleController::class, 'update']);
         Route::delete('/{schedule}', [ScheduleController::class, 'destroy']);
     });
-
 
     Route::prefix('groups')->group(function () {
         Route::get('/', [GroupController::class, 'index']);
@@ -81,9 +76,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{group}', [GroupController::class, 'destroy']);
     });
 
-
     Route::prefix('employees')->group(function () {
         Route::get('/', [EmployeeController::class, 'index']);
+        Route::get('/archived', [EmployeeController::class, 'archivedEmployees']);
         Route::post('/', [EmployeeController::class, 'store']);
         Route::get('/{employee}', [EmployeeController::class, 'show']);
         Route::put('/{employee}', [EmployeeController::class, 'update']);
@@ -92,7 +87,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/access_groups/{id}', [EmployeeController::class, 'updateAccessGroups']);
     });
 
-
     Route::prefix('users')->group(function () {
         Route::get('/', [UserController::class, 'index']);
         Route::post('/', [UserController::class, 'store']);
@@ -100,7 +94,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{user}', [UserController::class, 'update']);
         Route::delete('/{user}', [UserController::class, 'destroy']);
     });
-
 
     Route::prefix('command-types')->group(function () {
         Route::post('/', [CommandTypeController::class, 'store']);
@@ -120,7 +113,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{forgiveType}', [ForgiveTypesController::class, 'destroy']);
     });
 
-
     Route::get('/devices', [DeviceController::class, 'fetchDeviceData']);
     Route::post('/devices/{device_id}/scan_card', [DeviceController::class, 'scanCard']);
 
@@ -137,7 +129,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/commented-details', [CommentController::class, 'fetchCommentedDetails']);
     Route::post('/employee-orders', [CommentController::class, 'fetchOrders']);
 
-
     Route::get('/get-schedules', [ScheduleController::class, 'getSchedules']);
 
     Route::post('/events/search', [EmployeeController::class, 'searchEvents']);
@@ -146,6 +137,4 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [AccessGroupController::class, 'index']);
     });
 
-
 });
-

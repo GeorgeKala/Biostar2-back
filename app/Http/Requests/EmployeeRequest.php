@@ -19,12 +19,11 @@ class EmployeeRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    
     public function rules()
     {
         return [
             'fullname' => 'required|string',
-            'personal_id' => 'required|string|unique:employees,personal_id,' . ($this->employee ? $this->employee->id : 'NULL'),
+            'personal_id' => 'required|string|unique:employees,personal_id,'.($this->employee ? $this->employee->id : 'NULL'),
             'phone_number' => 'required|string',
             'department_id' => 'required|exists:departments,id',
             'start_datetime' => 'required|date',
@@ -36,9 +35,9 @@ class EmployeeRequest extends FormRequest
             'device' => 'nullable|string',
             'card_number' => 'required|string',
             'checksum' => 'required|string',
-            'holidays' => 'required|array', 
+            'holidays' => 'required|array',
             'holidays.*' => 'exists:holidays,id',
-            'device_id' => 'nullable'
+            'device_id' => 'nullable',
         ];
     }
 }

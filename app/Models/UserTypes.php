@@ -12,7 +12,4 @@ class UserTypes extends Model
     protected $fillable = [
         'name',
     ];
-
-    
-
 }

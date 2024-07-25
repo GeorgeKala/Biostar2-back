@@ -27,7 +27,7 @@ class StoreUserRequest extends FormRequest
             'username' => 'required|string|max:255|unique:users',
             'user_type_id' => 'required|exists:user_types,id',
             'department_id' => 'nullable|exists:departments,id',
-            'employee_id' => 'nullable|exists:employees,id', 
+            'employee_id' => 'nullable|exists:employees,id',
         ];
     }
 }

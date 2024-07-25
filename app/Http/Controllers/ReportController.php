@@ -7,7 +7,6 @@ use App\Models\EmployeeDayDetail;
 use App\Models\ForgiveType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
@@ -17,26 +16,25 @@ class ReportController extends Controller
             $sessionId = $request->header('bs-session-id');
             $biostarUrl = 'https://10.150.20.173:3002/tna/login/sso';
             $userData = [
-                'user_id' =>(string) $request->user()->id,
+                'user_id' => (string) $request->user()->id,
                 'biostar_session_id' => $sessionId,
             ];
-    
+
             $response = Http::withOptions(['verify' => false])
-                            ->post($biostarUrl, $userData);
-    
+                ->post($biostarUrl, $userData);
+
             if ($response->successful()) {
                 $responseData = $response->cookies()->toArray();
-    
+
                 return $responseData;
             } else {
                 return response()->json(['error' => 'Failed to login'], $response->status());
             }
         } catch (\Exception $e) {
-    
+
             return response()->json(['error' => 'Failed to login'], 500);
         }
     }
-
 
     // public function getMonthlyReports(Request $request)
     // {
@@ -165,12 +163,6 @@ class ReportController extends Controller
     //     }
     // }
 
-
-
-
-
-
-    
     // public function getMonthlyReports(Request $request)
     // {
     //     try {
@@ -220,7 +212,7 @@ class ReportController extends Controller
     //                     isset($row['device_id']) && isset($row['device_id']['id']) &&
     //                     isset($row['device_id']['name'])
     //                 ) {
-    //                     $date = substr($row['server_datetime'], 0, 10); 
+    //                     $date = substr($row['server_datetime'], 0, 10);
     //                     $userId = $row['user_id']['user_id'];
     //                     $userName = $row['user_id_name'];
     //                     $deviceId = $row['device_id']['id'];
@@ -266,23 +258,23 @@ class ReportController extends Controller
     //                     sort($user['daily_usages']);
     //                     $user['come_time'] = substr($user['daily_usages'][0], 11, 8);
     //                     $user['leave_time'] = substr(end($user['daily_usages']), 11, 8);
-    
+
     //                     if (isset($user['schedule'])) {
     //                         $scheduleStart = $user['schedule']['day_start'];
     //                         $scheduleEnd = $user['schedule']['day_end'];
-    
+
     //                         $comeTime = new \DateTime($user['daily_usages'][0]);
     //                         $leaveTime = new \DateTime(end($user['daily_usages']));
     //                         $scheduleStartTime = new \DateTime($date . ' ' . $scheduleStart);
     //                         $scheduleEndTime = new \DateTime($date . ' ' . $scheduleEnd);
-    
+
     //                         // Calculate minutes late/early
     //                         $user['come_late'] = $comeTime > $scheduleStartTime ? $scheduleStartTime->diff($comeTime)->i + ($scheduleStartTime->diff($comeTime)->h * 60) : 0;
     //                         $user['come_early'] = $comeTime < $scheduleStartTime ? $scheduleStartTime->diff($comeTime)->i + ($scheduleStartTime->diff($comeTime)->h * 60) : 0;
-    
+
     //                         $user['leave_late'] = $leaveTime > $scheduleEndTime ? $scheduleEndTime->diff($leaveTime)->i + ($scheduleEndTime->diff($leaveTime)->h * 60) : 0;
     //                         $user['leave_early'] = $leaveTime < $scheduleEndTime ? $scheduleEndTime->diff($leaveTime)->i + ($scheduleEndTime->diff($leaveTime)->h * 60) : 0;
-    
+
     //                         // Calculate worked hours
     //                         $interval = $comeTime->diff($leaveTime);
     //                         $user['worked_hours'] = $interval->h + ($interval->i / 60);
@@ -299,12 +291,6 @@ class ReportController extends Controller
     //         return response()->json(['error' => 'Failed to fetch monthly reports', 'message' => $e->getMessage()], 500);
     //     }
     // }
-
-
-
-
-    
-
 
     public function getMonthlyReports(Request $request)
     {
@@ -327,31 +313,31 @@ class ReportController extends Controller
             $employeeId = $request->input('employee_id');
 
             $body = [
-                "Query" => [
-                    "limit" => 51,
-                    "conditions" => [
+                'Query' => [
+                    'limit' => 51,
+                    'conditions' => [
                         [
-                            "column" => "datetime",
-                            "operator" => 3,
-                            "values" => [
+                            'column' => 'datetime',
+                            'operator' => 3,
+                            'values' => [
                                 $startDateTime,
-                                $endDateTime
-                            ]
+                                $endDateTime,
+                            ],
                         ],
                         [
-                            "column" => "event_type_id",
-                            "operator" => 0,
-                            "values" => [
-                                "4102"
-                            ]
-                        ]
-                    ]
-                ]
+                            'column' => 'event_type_id',
+                            'operator' => 0,
+                            'values' => [
+                                '4102',
+                            ],
+                        ],
+                    ],
+                ],
             ];
 
             $response = Http::withOptions(['verify' => false])
-                            ->withHeaders(['bs-session-id' => $sessionId])
-                            ->post($baseUrl, $body);
+                ->withHeaders(['bs-session-id' => $sessionId])
+                ->post($baseUrl, $body);
 
             if ($response->successful()) {
                 $reports = $response->json();
@@ -408,11 +394,11 @@ class ReportController extends Controller
                             'final_penalized_time' => null,
                             'day_type' => '',
                             'comment' => '',
-                            'forgive_type' => ''
+                            'forgive_type' => '',
                         ];
 
                         $dayDetail = $employee->dayDetails->where('date', $date)->first();
-                        
+
                         if ($dayDetail) {
                             if ($dayDetail->dayType !== null) {
                                 $employeeData['day_type'] = $dayDetail->dayType ? $dayDetail->dayType->name : '';
@@ -447,7 +433,7 @@ class ReportController extends Controller
                             }
                         }
 
-                        if (!empty($dailyUsages)) {
+                        if (! empty($dailyUsages)) {
                             sort($dailyUsages);
                             $employeeData['come_time'] = substr($dailyUsages[0], 11, 8);
                             $employeeData['leave_time'] = substr(end($dailyUsages), 11, 8);
@@ -458,8 +444,8 @@ class ReportController extends Controller
 
                                 $comeTime = new \DateTime($dailyUsages[0]);
                                 $leaveTime = new \DateTime(end($dailyUsages));
-                                $scheduleStartTime = new \DateTime($date . ' ' . $scheduleStart);
-                                $scheduleEndTime = new \DateTime($date . ' ' . $scheduleEnd);
+                                $scheduleStartTime = new \DateTime($date.' '.$scheduleStart);
+                                $scheduleEndTime = new \DateTime($date.' '.$scheduleEnd);
 
                                 $comeLateInterval = $comeTime > $scheduleStartTime ? $scheduleStartTime->diff($comeTime) : null;
                                 $comeEarlyInterval = $comeTime < $scheduleStartTime ? $scheduleStartTime->diff($comeTime) : null;
@@ -508,12 +494,11 @@ class ReportController extends Controller
         }
     }
 
-
     private function createDateRangeArray($start, $end)
     {
         $startDate = new \DateTime($start);
         $endDate = new \DateTime($end);
-        $endDate = $endDate->modify('+1 day'); 
+        $endDate = $endDate->modify('+1 day');
 
         $interval = new \DateInterval('P1D');
         $dateRange = new \DatePeriod($startDate, $interval, $endDate);
@@ -526,15 +511,14 @@ class ReportController extends Controller
         return $dates;
     }
 
-
     public function updateOrCreateDayDetail(Request $request)
     {
         $validatedData = $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'date' => 'required|date',
             'day_type_id' => 'nullable|exists:day_types,id',
-            'forgive_type_id' => 'nullable|exists:forgive_types,id', 
-            'comment' => 'nullable|string'
+            'forgive_type_id' => 'nullable|exists:forgive_types,id',
+            'comment' => 'nullable|string',
         ]);
 
         try {
@@ -545,7 +529,7 @@ class ReportController extends Controller
             }
             $comment = $validatedData['comment'] ?? '';
             if ($forgiveTypeName) {
-                $comment = '(' . $forgiveTypeName . ') ' . $comment;
+                $comment = '('.$forgiveTypeName.') '.$comment;
             }
 
             $userId = auth()->user()->id;
@@ -557,24 +541,22 @@ class ReportController extends Controller
                 ],
                 [
                     'day_type_id' => $validatedData['day_type_id'] ?? null,
-                    'forgive_type_id' => $validatedData['forgive_type_id'] ?? null, 
+                    'forgive_type_id' => $validatedData['forgive_type_id'] ?? null,
                     'comment' => $comment,
                     'user_id' => $userId,
                 ]
             );
 
             return response()->json($dayDetail);
-                
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update employee day detail',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
-
 
     public function updateDayTypeForDateRange(Request $request)
     {
@@ -582,7 +564,7 @@ class ReportController extends Controller
             'employee_id' => 'required|exists:employees,id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'day_type_id' => 'required|exists:day_types,id'
+            'day_type_id' => 'required|exists:day_types,id',
         ]);
 
         try {
@@ -604,12 +586,10 @@ class ReportController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update day type for the specified date range.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
-
 
     // public function fetchReport(Request $request)
     // {
@@ -619,7 +599,6 @@ class ReportController extends Controller
     //         $sessionId = $request->header('Bs-Session-Id');
 
     //         $sessionId = "bs-ta-session-id={$sessionId}";
-            
 
     //         $body = [
     //             "type" => "CUSTOM",
@@ -650,7 +629,7 @@ class ReportController extends Controller
     //                 'error' => $response->body()
     //             ], $response->status());
     //         }
-            
+
     //     } catch (\Exception $e) {
     //         return response()->json([
     //             'success' => false,
@@ -659,9 +638,6 @@ class ReportController extends Controller
     //         ], 500);
     //     }
     // }
-
-
-
 
     public function fetchReport(Request $request)
     {
@@ -681,25 +657,25 @@ class ReportController extends Controller
 
             $departmentId = $request->input('department_id');
             $employeeId = $request->input('employee_id');
-            
+
             $body = [
-                "type" => "CUSTOM",
-                "report_type" => "REPORT_DAILY",
-                "limit" => 100,
-                "offset" => 0,
-                "rebuild_time_card" => true,
-                "start_datetime" => $startDate,
-                "end_datetime" => $endDate,
-                "group_id_list" => ["1"],
-                "columns" => [
-                    ["field" => "userName"],
-                    ["field" => "datetime"]
-                ]
+                'type' => 'CUSTOM',
+                'report_type' => 'REPORT_DAILY',
+                'limit' => 100,
+                'offset' => 0,
+                'rebuild_time_card' => true,
+                'start_datetime' => $startDate,
+                'end_datetime' => $endDate,
+                'group_id_list' => ['1'],
+                'columns' => [
+                    ['field' => 'userName'],
+                    ['field' => 'datetime'],
+                ],
             ];
 
             $response = Http::withOptions(['verify' => false])
-                            ->withHeaders(['Cookie' => $sessionId])
-                            ->post($url, $body);
+                ->withHeaders(['Cookie' => $sessionId])
+                ->post($url, $body);
 
             if ($response->successful()) {
                 $reportData = $response->json();
@@ -740,8 +716,8 @@ class ReportController extends Controller
                         $shiftEnd = null;
                         $shiftTimes = explode('-', $report['shift']);
                         if (count($shiftTimes) === 2 && ($shiftTimes[0]) && ($shiftTimes[1])) {
-                            $shiftStart = \Carbon\Carbon::createFromFormat('H:i', trim($shiftTimes[0] . ':00'));
-                            $shiftEnd = \Carbon\Carbon::createFromFormat('H:i', trim($shiftTimes[1] . ':00'));
+                            $shiftStart = \Carbon\Carbon::createFromFormat('H:i', trim($shiftTimes[0].':00'));
+                            $shiftEnd = \Carbon\Carbon::createFromFormat('H:i', trim($shiftTimes[1].':00'));
                         }
 
                         $comeTime = null;
@@ -750,7 +726,7 @@ class ReportController extends Controller
                             $comeTime = \Carbon\Carbon::createFromFormat('H:i:s', $report['inTime']);
                             $leaveTime = \Carbon\Carbon::createFromFormat('H:i:s', $report['outTime']);
                         } catch (\Exception $e) {
-                        
+
                         }
 
                         $comeLate = $comeTime && $shiftStart && $comeTime->greaterThan($shiftStart) ? $comeTime->diffInMinutes($shiftStart) : null;
@@ -787,11 +763,11 @@ class ReportController extends Controller
                             'final_penalized_time' => max(0, $penalizedTime - $employee->honorable_minutes_per_day),
                             'day_type' => '',
                             'comment' => '',
-                            'forgive_type' => ''
+                            'forgive_type' => '',
                         ];
 
                         $dayDetail = $employee->dayDetails->where('date', $report['datetime'])->first();
-                        
+
                         if ($dayDetail) {
                             if ($dayDetail->dayType !== null) {
                                 $employeeData['day_type'] = $dayDetail->dayType ? $dayDetail->dayType->name : '';
@@ -818,6 +794,7 @@ class ReportController extends Controller
                     if ($a['fullname'] === $b['fullname']) {
                         return strtotime($a['date']) - strtotime($b['date']);
                     }
+
                     return strcmp($a['fullname'], $b['fullname']);
                 });
 
@@ -826,25 +803,22 @@ class ReportController extends Controller
                     'message_key' => 'SUCCESSFUL',
                     'language' => 'en',
                     'status_code' => 'SUCCESSFUL',
-                    'records' => $combinedData
+                    'records' => $combinedData,
                 ]);
             } else {
                 return response()->json([
                     'success' => false,
                     'message' => 'Failed to fetch report',
-                    'error' => $response->body()
+                    'error' => $response->body(),
                 ], $response->status());
             }
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch report',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
-
 }
-

@@ -42,7 +42,7 @@ class CommentController extends Controller
                     'forgive_type' => $detail->forgiveType->name ?? null,
                     'user' => $detail->user->name ?? null,
                     'created_at' => $detail->created_at->format('Y-m-d H:i:s'),
-                    
+
                 ];
             });
 
@@ -51,19 +51,17 @@ class CommentController extends Controller
                 'message_key' => 'SUCCESSFUL',
                 'language' => 'en',
                 'status_code' => 'SUCCESSFUL',
-                'records' => $details
+                'records' => $details,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch details',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
-
 
     public function fetchOrders(Request $request)
     {
@@ -96,7 +94,7 @@ class CommentController extends Controller
                     'date' => $detail->date,
                     'employee' => $detail->employee->fullname,
                     'department' => $detail->employee->department->name ?? null,
-                    'day_type' => $detail->dayType->name ?? null
+                    'day_type' => $detail->dayType->name ?? null,
                 ];
             });
 
@@ -105,16 +103,15 @@ class CommentController extends Controller
                 'message_key' => 'SUCCESSFUL',
                 'language' => 'en',
                 'status_code' => 'SUCCESSFUL',
-                'records' => $details
+                'records' => $details,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch details',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
 }

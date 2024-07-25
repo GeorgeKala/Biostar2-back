@@ -11,17 +11,18 @@ class AccessGroupController extends Controller
     {
         $sessionId = $request->header('bs-session-id');
 
-        $accessGroupsUrl = 'https://10.150.20.173/api/access_groups'; 
+        $accessGroupsUrl = 'https://10.150.20.173/api/access_groups';
 
         try {
             $accessGroupsResponse = Http::withOptions(['verify' => false])
                 ->withHeaders([
-                    "bs-session-id" => $sessionId
+                    'bs-session-id' => $sessionId,
                 ])
                 ->get($accessGroupsUrl);
 
             if ($accessGroupsResponse->successful()) {
                 $accessGroupsData = $accessGroupsResponse->json();
+
                 return response()->json($accessGroupsData);
             } else {
                 return response()->json(['error' => 'Failed to fetch access groups data'], $accessGroupsResponse->status());
@@ -30,5 +31,4 @@ class AccessGroupController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
 }

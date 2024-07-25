@@ -11,6 +11,7 @@ class ScheduleController extends Controller
     public function index()
     {
         $schedules = Schedule::all();
+
         return response()->json($schedules);
     }
 
@@ -40,7 +41,7 @@ class ScheduleController extends Controller
     public function update(Request $request, Schedule $schedule)
     {
         $data = $request->validate([
-            'name' => 'required|string|unique:schedules,name,' . $schedule->id,
+            'name' => 'required|string|unique:schedules,name,'.$schedule->id,
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
             'repetition_unit' => 'nullable|integer',
@@ -55,13 +56,12 @@ class ScheduleController extends Controller
         return response()->json($schedule);
     }
 
-
     public function destroy(Schedule $schedule)
     {
         $schedule->delete();
+
         return response()->json(null, 204);
     }
-
 
     public function getSchedules(Request $request)
     {
@@ -72,8 +72,8 @@ class ScheduleController extends Controller
             $sessionId = "bs-ta-session-id={$sessionId}";
 
             $response = Http::withOptions(['verify' => false])
-                            ->withHeaders(['Cookie' => $sessionId])
-                            ->get($url);
+                ->withHeaders(['Cookie' => $sessionId])
+                ->get($url);
 
             if ($response->successful()) {
                 $schedules = $response->json();
@@ -83,16 +83,15 @@ class ScheduleController extends Controller
                 return response()->json([
                     'success' => false,
                     'message' => 'Failed to fetch schedules',
-                    'error' => $response->body()
+                    'error' => $response->body(),
                 ], $response->status());
             }
         } catch (\Throwable $th) {
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while fetching schedules',
-                'error' => $th->getMessage()
+                'error' => $th->getMessage(),
             ], 500);
         }
     }
-
 }

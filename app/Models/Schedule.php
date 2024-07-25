@@ -19,7 +19,4 @@ class Schedule extends Model
         'day_start',
         'day_end',
     ];
-
-    
-    
 }

@@ -12,7 +12,7 @@ class Department extends Model
     protected $fillable = [
         'name',
         'parent_id',
-        'access_groups'
+        'access_groups',
     ];
 
     protected $casts = [
@@ -22,7 +22,7 @@ class Department extends Model
     public function buildings()
     {
         return $this->belongsToMany(Building::class, 'building_department')
-                    ->withPivot('id');
+            ->withPivot('id');
     }
 
     public function parent()
@@ -34,5 +34,4 @@ class Department extends Model
     {
         return $this->hasMany(Department::class, 'parent_id')->with('children');
     }
-
 }

@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -25,7 +24,7 @@ class ForgiveTypeSeeder extends Seeder
             ['name' => 'ცვლის გადაცვლა', 'forgive' => true],
             ['name' => 'დისტანციურად მუშაობა', 'forgive' => true],
             ['name' => 'შვებულება', 'forgive' => true],
-            ['name' => 'საავადმყოფო ფურცელი', 'forgive' => true]
+            ['name' => 'საავადმყოფო ფურცელი', 'forgive' => true],
         ];
 
         DB::table('forgive_types')->insert($forgiveTypes);

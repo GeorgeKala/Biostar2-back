@@ -14,8 +14,8 @@ class EmployeeDayDetail extends Model
         'date',
         'day_type_id',
         'comment',
-        'forgive_type_id', 
-        'user_id'
+        'forgive_type_id',
+        'user_id',
     ];
 
     public function employee()

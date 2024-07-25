@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Building;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class BuildingController extends Controller
@@ -17,20 +16,20 @@ class BuildingController extends Controller
     public function index()
     {
         $buildings = Building::with('parent')->get();
+
         return response()->json(['data' => $buildings], 200);
     }
-
 
     public function nestedBuildings()
     {
         $building = Building::with('children.children')->whereNull('parent_id')->get();
+
         return response()->json(['data' => $building], 200);
     }
 
     /**
      * Store a newly created building in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
@@ -60,7 +59,7 @@ class BuildingController extends Controller
     {
         $building = Building::with('parent')->find($id);
 
-        if (!$building) {
+        if (! $building) {
             return response()->json(['error' => 'Building not found'], 404);
         }
 
@@ -70,7 +69,6 @@ class BuildingController extends Controller
     /**
      * Update the specified building in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
@@ -78,7 +76,7 @@ class BuildingController extends Controller
     {
         $building = Building::find($id);
 
-        if (!$building) {
+        if (! $building) {
             return response()->json(['error' => 'Building not found'], 404);
         }
 
@@ -107,7 +105,7 @@ class BuildingController extends Controller
     {
         $building = Building::find($id);
 
-        if (!$building) {
+        if (! $building) {
             return response()->json(['error' => 'Building not found'], 404);
         }
 
@@ -128,8 +126,6 @@ class BuildingController extends Controller
     /**
      * Detach a department from a building.
      *
-     * @param Request $request
-     * @param Building $building
      * @return \Illuminate\Http\JsonResponse
      */
     public function detachDepartments(Request $request, Building $building)
@@ -173,6 +169,7 @@ class BuildingController extends Controller
                 ];
             }
         }
+
         return response()->json($formattedData);
     }
 }

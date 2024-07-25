@@ -10,6 +10,7 @@ class GroupController extends Controller
     public function index()
     {
         $groups = Group::all();
+
         return response()->json($groups);
     }
 
@@ -23,6 +24,7 @@ class GroupController extends Controller
         ]);
 
         $group = Group::create($request->all());
+
         return response()->json($group, 201);
     }
 
@@ -34,21 +36,21 @@ class GroupController extends Controller
     public function update(Request $request, Group $group)
     {
         $request->validate([
-            'name' => 'required|string|unique:groups,name,' . $group->id,
+            'name' => 'required|string|unique:groups,name,'.$group->id,
             'control' => 'required|boolean',
             'break_control' => 'required|boolean',
             'leave_control' => 'required|boolean',
         ]);
 
         $group->update($request->all());
+
         return response()->json($group);
     }
 
     public function destroy(Group $group)
     {
         $group->delete();
+
         return response()->json(null, 204);
     }
-
 }
-

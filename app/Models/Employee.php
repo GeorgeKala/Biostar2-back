@@ -25,30 +25,25 @@ class Employee extends Model
         'checksum',
     ];
 
-
     public function department()
     {
         return $this->belongsTo(Department::class);
     }
 
- 
     public function group()
     {
         return $this->belongsTo(Group::class);
     }
 
- 
     public function schedule()
     {
         return $this->belongsTo(Schedule::class);
     }
-    
 
     public function holidays()
     {
         return $this->belongsToMany(Holiday::class);
     }
-    
 
     public function dayDetails()
     {

@@ -14,7 +14,7 @@ class Building extends Model
     public function departments()
     {
         return $this->belongsToMany(Department::class, 'building_department')
-                    ->withPivot('id');
+            ->withPivot('id');
     }
 
     public function parent()
@@ -26,5 +26,4 @@ class Building extends Model
     {
         return $this->hasMany(Building::class, 'parent_id')->with('children');
     }
-
 }

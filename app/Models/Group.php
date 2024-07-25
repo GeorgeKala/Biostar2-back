@@ -13,6 +13,6 @@ class Group extends Model
         'name',
         'control',
         'break_control',
-        'leave_control'
+        'leave_control',
     ];
 }

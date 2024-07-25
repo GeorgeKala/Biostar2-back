@@ -11,7 +11,6 @@ class CommandTypeController extends Controller
     /**
      * Create a new command type.
      *
-     * @param  Request  $request
      * @return Response
      */
     public function store(Request $request)
@@ -49,7 +48,7 @@ class CommandTypeController extends Controller
     {
         $commandType = CommandType::find($id);
 
-        if (!$commandType) {
+        if (! $commandType) {
             return response()->json(['message' => 'Command type not found'], 404);
         }
 
@@ -59,7 +58,6 @@ class CommandTypeController extends Controller
     /**
      * Update a specific command type.
      *
-     * @param  Request  $request
      * @param  int  $id
      * @return Response
      */
@@ -71,7 +69,7 @@ class CommandTypeController extends Controller
 
         $commandType = CommandType::find($id);
 
-        if (!$commandType) {
+        if (! $commandType) {
             return response()->json(['message' => 'Command type not found'], 404);
         }
 
@@ -91,7 +89,7 @@ class CommandTypeController extends Controller
     {
         $commandType = CommandType::find($id);
 
-        if (!$commandType) {
+        if (! $commandType) {
             return response()->json(['message' => 'Command type not found'], 404);
         }
 

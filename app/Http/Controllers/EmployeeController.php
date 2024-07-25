@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Employee;
 use App\Http\Requests\EmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
+use App\Models\Employee;
 use Carbon\Carbon;
 use GuzzleHttp\Exception\RequestException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -18,20 +19,31 @@ class EmployeeController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(): JsonResponse
     {
-        $employees = Employee::with('department', 'group', 'schedule', 'holidays', 'user')->get();
+        $employees = Employee::with('department', 'group', 'schedule', 'holidays', 'user')
+            ->whereNull('expiry_datetime')
+            ->get();
+
         return response()->json($employees);
+    }
+
+
+    public function archivedEmployees(): JsonResponse
+    {
+        $archivedEmployees = Employee::with('department', 'group', 'schedule', 'holidays', 'user')
+            ->whereNotNull('expiry_datetime')
+            ->get();
+
+        return response()->json($archivedEmployees);
     }
 
     /**
      * Store a newly created employee in storage.
      *
-     * @param  \App\Http\Requests\EmployeeRequest  $request
      * @return \Illuminate\Http\Response
      */
-
-    public function store(EmployeeRequest $request)
+    public function store(EmployeeRequest $request): JsonResponse
     {
 
         $biostarUrl = 'https://10.150.20.173/api/users';
@@ -39,7 +51,7 @@ class EmployeeController extends Controller
         try {
             $userIdResponse = Http::withOptions(['verify' => false])
                 ->withHeaders([
-                    "bs-session-id" => $request->session_id
+                    'bs-session-id' => $request->session_id,
                 ])
                 ->get('https://10.150.20.173/api/users/next_user_id');
 
@@ -54,7 +66,7 @@ class EmployeeController extends Controller
             try {
                 $validated = $request->validated();
 
-                $employee = new Employee();
+                $employee = new Employee;
                 $employee->id = $userId;
                 $employee->fill($validated);
                 $employee->save();
@@ -62,7 +74,6 @@ class EmployeeController extends Controller
                 if (isset($validated['holidays'])) {
                     $employee->holidays()->attach($validated['holidays']);
                 }
-
 
                 $department = $employee->department;
                 if ($department && $department->buildings) {
@@ -74,42 +85,43 @@ class EmployeeController extends Controller
                     $formattedAccessGroups = [];
                 }
 
-
                 $biostarUserData = [
                     'User' => [
-                        'user_id' =>  $userId,
+                        'user_id' => $userId,
                         'start_datetime' => '2001-01-01T00:00:00.00Z',
                         'expiry_datetime' => '2030-12-31T23:59:00.00Z',
                         'name' => $employee->fullname,
-                        'email' => $employee->id . '@gmail.com',
+                        'email' => $employee->id.'@gmail.com',
                         'permission' => ['id' => '1'],
-                        "login_id" => $employee->id,
-                        "password" => "password",
-                        "user_group_id" => [
-                            "id" => "1"
+                        'login_id' => $employee->id,
+                        'password' => 'password',
+                        'user_group_id' => [
+                            'id' => '1',
                         ],
-                        "access_groups" => $formattedAccessGroups
-                    ]
+                        'access_groups' => $formattedAccessGroups,
+                    ],
                 ];
 
                 $response = Http::withOptions(['verify' => false])
                     ->withHeaders([
-                        "bs-session-id" => $request->session_id
+                        'bs-session-id' => $request->session_id,
                     ])
                     ->post($biostarUrl, $biostarUserData);
-
 
                 if ($response->successful()) {
                     $card_id = $this->makeCard($request->card_number, $request->session_id);
                     $final_result = $this->updateUserCards($userId, $card_id, $request->session_id);
                     DB::commit();
+
                     return response()->json($final_result, 201);
                 } else {
                     DB::rollBack();
+
                     return response()->json(['error' => 'Unexpected response from Biostar API', 'response' => $response->json()], $response->status());
                 }
             } catch (\Exception $e) {
                 DB::rollBack();
+
                 return response()->json(['error' => $e->getMessage()], 500);
             }
         } catch (RequestException $e) {
@@ -129,7 +141,6 @@ class EmployeeController extends Controller
     /**
      * Display the specified employee.
      *
-     * @param  \App\Models\Employee  $employee
      * @return \Illuminate\Http\Response
      */
     public function show(Employee $employee)
@@ -141,11 +152,9 @@ class EmployeeController extends Controller
      * Update the specified employee in storage.
      *
      * @param  \App\Http\Requests\EmployeeRequest  $request
-     * @param  \App\Models\Employee  $employee
      * @return \Illuminate\Http\Response
      */
-
-    public function update(UpdateEmployeeRequest $request, Employee $employee)
+    public function update(UpdateEmployeeRequest $request, Employee $employee): JsonResponse
     {
 
         DB::beginTransaction();
@@ -161,29 +170,32 @@ class EmployeeController extends Controller
                 $employee->holidays()->detach();
             }
 
-            $biostarUrl = 'https://10.150.20.173/api/users/' . $employee->id;
+            $biostarUrl = 'https://10.150.20.173/api/users/'.$employee->id;
 
             $biostarUserData = [
                 'User' => [
-                    'name' =>  $validated['fullname'],
-                ]
+                    'name' => $validated['fullname'],
+                ],
             ];
             $response = Http::withOptions(['verify' => false])
                 ->withHeaders([
-                    "bs-session-id" => $request->session_id
+                    'bs-session-id' => $request->session_id,
                 ])
                 ->put($biostarUrl, $biostarUserData);
 
             if ($response->successful()) {
 
                 DB::commit();
+
                 return response()->json($employee);
             } else {
                 DB::rollBack();
+
                 return response()->json(['error' => 'Failed to update user in Biostar API', 'response' => $response->json()], $response->status());
             }
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -191,28 +203,28 @@ class EmployeeController extends Controller
     /**
      * Remove the specified employee from storage.
      *
-     * @param  \App\Models\Employee  $employee
      * @return \Illuminate\Http\Response
      */
-
-    public function destroy(Employee $employee, Request $request)
+    public function destroy(Employee $employee, Request $request): JsonResponse
     {
-        $biostarUrl = 'https://10.150.20.173/api/users/' . $employee->id;
+        $biostarUrl = 'https://10.150.20.173/api/users/'.$employee->id;
         try {
             DB::beginTransaction();
 
             $response = Http::withOptions(['verify' => false])
                 ->withHeaders([
-                    "bs-session-id" => $request->header()['bs-session-id'][0]
+                    'bs-session-id' => $request->header()['bs-session-id'][0],
                 ])
                 ->delete($biostarUrl);
 
             if ($response->successful()) {
                 $employee->delete();
                 DB::commit();
+
                 return response()->json(null, 204);
             } else {
                 DB::rollBack();
+
                 return response()->json(['error' => 'Failed to delete user in Biostar API', 'response' => $response->json()], $response->status());
             }
         } catch (RequestException $e) {
@@ -229,11 +241,10 @@ class EmployeeController extends Controller
             }
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
-
-
 
     private function makeCard($iterIDVal, $bsSessionId)
     {
@@ -247,21 +258,21 @@ class EmployeeController extends Controller
                         'card_type' => [
                             'id' => '1',
                             'name' => '',
-                            'type' => '10'
+                            'type' => '10',
 
                         ],
                         'wiegand_format_id' => [
-                            'id'=> '0'
-                        ]
-                    ]
-                ]
-            ]
+                            'id' => '0',
+                        ],
+                    ],
+                ],
+            ],
         ];
 
         try {
             $response = Http::withOptions(['verify' => false])
                 ->withHeaders([
-                    'bs-session-id' => $bsSessionId
+                    'bs-session-id' => $bsSessionId,
                 ])
                 ->post($url, $payload);
 
@@ -269,13 +280,12 @@ class EmployeeController extends Controller
 
                 return $response->json()['CardCollection']['rows'][0]['id'];
             } else {
-                throw new \Exception('Failed to make card request: ' . $response->status());
+                throw new \Exception('Failed to make card request: '.$response->status());
             }
         } catch (\Exception $e) {
-            throw new \Exception('Error making card request: ' . $e->getMessage());
+            throw new \Exception('Error making card request: '.$e->getMessage());
         }
     }
-
 
     private function updateUserCards($userId, $iterIDVal, $bsSessionId)
     {
@@ -286,10 +296,10 @@ class EmployeeController extends Controller
             'User' => [
                 'cards' => [
                     [
-                        'id' => $iterIDVal
-                    ]
-                ]
-            ]
+                        'id' => $iterIDVal,
+                    ],
+                ],
+            ],
         ];
 
         try {
@@ -303,14 +313,12 @@ class EmployeeController extends Controller
             if ($response->successful()) {
                 return $response->json();
             } else {
-                throw new \Exception('Failed to update user cards: ' . $response->status());
+                throw new \Exception('Failed to update user cards: '.$response->status());
             }
         } catch (\Exception $e) {
-            throw new \Exception('Error updating user cards: ' . $e->getMessage());
+            throw new \Exception('Error updating user cards: '.$e->getMessage());
         }
     }
-
-
 
     public function searchEvents(Request $request)
     {
@@ -320,45 +328,45 @@ class EmployeeController extends Controller
         $endOfDay = Carbon::now()->endOfDay()->format('Y-m-d\TH:i:s.000\Z');
 
         $payload = [
-            "Query" => [
-                "limit" => 200,
-                "conditions" => [
+            'Query' => [
+                'limit' => 200,
+                'conditions' => [
                     [
-                        "column" => "datetime",
-                        "operator" => 3,
-                        "values" => [
+                        'column' => 'datetime',
+                        'operator' => 3,
+                        'values' => [
                             $startOfDay,
-                            $endOfDay
-                        ]
+                            $endOfDay,
+                        ],
                     ],
                     [
-                        "column" => 'device_id',
-                        "operator" => 2,
-                        "values" => [
-                            $request->device_id
-                        ]
+                        'column' => 'device_id',
+                        'operator' => 2,
+                        'values' => [
+                            $request->device_id,
+                        ],
                     ],
                     [
-                        "column" => "event_type_id",
-                        "operator" => 2,
-                        "values" => [
-                            "4102"
-                        ]
-                    ]
+                        'column' => 'event_type_id',
+                        'operator' => 2,
+                        'values' => [
+                            '4102',
+                        ],
+                    ],
                 ],
-                "orders" => [
+                'orders' => [
                     [
-                        "column" => "datetime",
-                        "descending" => true
-                    ]
-                ]
-            ]
+                        'column' => 'datetime',
+                        'descending' => true,
+                    ],
+                ],
+            ],
         ];
 
         try {
             $response = Http::withOptions(['verify' => false])
                 ->withHeaders([
-                    "bs-session-id" => $request->header()['bs-session-id'][0]
+                    'bs-session-id' => $request->header()['bs-session-id'][0],
                 ])
                 ->post($url, $payload);
 
@@ -370,7 +378,7 @@ class EmployeeController extends Controller
 
                 $employeesById = $employees->keyBy('id');
 
-                $result = array_map(function($event) use ($employeesById) {
+                $result = array_map(function ($event) {
                     $employeeId = $event['user_id']['user_id'];
 
                     $resultEmployee = Employee::find($employeeId);
@@ -395,36 +403,35 @@ class EmployeeController extends Controller
         }
     }
 
-
     public function updateAccessGroups(Request $request, $id)
     {
-        $url = 'https://10.150.20.173/api/access_groups/' . $id;
-
+        $baseUrl = 'https://10.150.20.173';
+        $url = "{$baseUrl}/api/users/{$id}";
         $payload = [
-            'AccessGroup' => [
-                'new_users' => [
-                    [
-                        'user_id' => $request->input('user_id')
-                    ]
-                ]
-            ]
+            'User' => [
+                'access_groups' => $request->input('access_groups', []),
+            ],
         ];
 
         try {
             $response = Http::withOptions(['verify' => false])
                 ->withHeaders([
-                    'bs-session-id' => $request->header('bs-session-id')
+                    'bs-session-id' => $request->header('bs-session-id'),
                 ])
                 ->put($url, $payload);
 
             if ($response->successful()) {
                 return response()->json($response->json(), 200);
             } else {
-                return response()->json(['error' => 'Failed to update access group', 'response' => $response->json()], $response->status());
+                return response()->json([
+                    'error' => 'Failed to update access groups',
+                    'response' => $response->json(),
+                ], $response->status());
             }
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
         }
     }
-
 }

@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -20,7 +19,7 @@ class HolidaySeeder extends Seeder
             'ხუთშაბათი',
             'პარასკევი',
             'შაბათი',
-            'კვირა'
+            'კვირა',
         ];
 
         foreach ($holidays as $holiday) {

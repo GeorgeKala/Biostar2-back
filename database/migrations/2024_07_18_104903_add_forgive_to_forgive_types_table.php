@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('forgive_types', function (Blueprint $table) {
-            $table->dropColumn('forgive'); 
+            $table->dropColumn('forgive');
         });
     }
 };

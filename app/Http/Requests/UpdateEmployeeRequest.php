@@ -23,7 +23,7 @@ class UpdateEmployeeRequest extends FormRequest
     {
         return [
             'fullname' => 'sometimes|string',
-            'personal_id' => 'sometimes|string|unique:employees,personal_id,'  . ($this->employee ? $this->employee->id : 'NULL'),
+            'personal_id' => 'sometimes|string|unique:employees,personal_id,'.($this->employee ? $this->employee->id : 'NULL'),
             'phone_number' => 'sometimes|string',
             'department_id' => 'sometimes|exists:departments,id',
             'start_datetime' => 'sometimes|date',
@@ -35,7 +35,7 @@ class UpdateEmployeeRequest extends FormRequest
             'device' => 'sometimes|string',
             'card_number' => 'sometimes|string',
             'checksum' => 'sometimes|string',
-            'holidays' => 'array', 
+            'holidays' => 'array',
             'holidays.*' => 'exists:holidays,id',
         ];
     }
