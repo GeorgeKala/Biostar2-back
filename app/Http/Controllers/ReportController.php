@@ -758,9 +758,6 @@ class ReportController extends Controller
                         $leaveLate = $leaveTime && $shiftEnd && $leaveTime->greaterThan($shiftEnd) ? $leaveTime->diffInMinutes($shiftEnd) : null;
                         $leaveEarly = $leaveTime && $shiftEnd && $leaveTime->lessThan($shiftEnd) ? $shiftEnd->diffInMinutes($leaveTime) : null;
 
-
-
-                        
                         $workedHours = $comeTime && $leaveTime ? $leaveTime->diffInMinutes($comeTime) / 60 : null;
                         $workedHours = $workedHours !== null ? number_format($workedHours, 2) : null;
 

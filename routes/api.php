@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccessGroupController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\CommandTypeController;
@@ -38,6 +39,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('buildings')->group(function () {
         Route::get('/', [BuildingController::class, 'index']);
+        Route::get('/nested', [BuildingController::class, 'nestedBuildings']);
         Route::get('/departments', [BuildingController::class, 'getBuildingsWithDepartments']);
         Route::post('/', [BuildingController::class, 'store']);
         Route::get('/{building}', [BuildingController::class, 'show']);
@@ -56,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{department}', [DepartmentController::class, 'show']);
         Route::put('/{department}', [DepartmentController::class, 'update']);
         Route::delete('/{department}', [DepartmentController::class, 'destroy']);
+        Route::post('/add-access-groups', [DepartmentController::class, 'addAccessGroups']);
     });
 
 
@@ -78,6 +81,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{group}', [GroupController::class, 'destroy']);
     });
 
+
     Route::prefix('employees')->group(function () {
         Route::get('/', [EmployeeController::class, 'index']);
         Route::post('/', [EmployeeController::class, 'store']);
@@ -95,6 +99,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{user}', [UserController::class, 'update']);
         Route::delete('/{user}', [UserController::class, 'destroy']);
     });
+    
 
     Route::prefix('command-types')->group(function () {
         Route::post('/', [CommandTypeController::class, 'store']);
@@ -130,6 +135,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/commented-details', [CommentController::class, 'fetchCommentedDetails']);
     Route::post('/employee-orders', [CommentController::class, 'fetchOrders']);
+
+
+    Route::get('/get-schedules', [ScheduleController::class, 'getSchedules']);
+
+    Route::post('/events/search', [EmployeeController::class, 'searchEvents']);
+
+    Route::prefix('access-groups')->group(function () {
+        Route::get('/', [AccessGroupController::class, 'index']);
+    });
 
     
 });

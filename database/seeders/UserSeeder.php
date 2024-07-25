@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
             'password' => bcrypt('Genesis2050!'),
             'username' => '3', 
             'user_type_id' => 1,
-            'employee' => 'Employee number 12345',
+            'employee_id' => null,
         ]);
     }
 }

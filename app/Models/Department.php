@@ -12,6 +12,11 @@ class Department extends Model
     protected $fillable = [
         'name',
         'parent_id',
+        'access_groups'
+    ];
+
+    protected $casts = [
+        'access_groups' => 'array',
     ];
 
     public function buildings()
@@ -27,7 +32,7 @@ class Department extends Model
 
     public function children()
     {
-        return $this->hasMany(Department::class, 'parent_id');
+        return $this->hasMany(Department::class, 'parent_id')->with('children');
     }
 
 }

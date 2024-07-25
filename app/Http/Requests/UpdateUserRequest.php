@@ -27,7 +27,7 @@ class UpdateUserRequest extends FormRequest
             'username' => 'sometimes|string|max:255|unique:users,username,' . $this->user->id,
             'user_type_id' => 'sometimes|exists:user_types,id',
             'department_id' => 'nullable|exists:departments,id',
-            'employee' => 'nullable|string',
+            'employee_id' => 'nullable|exists:employees,id',
         ];
     }
 }

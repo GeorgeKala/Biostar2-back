@@ -54,4 +54,9 @@ class Employee extends Model
     {
         return $this->hasMany(EmployeeDayDetail::class);
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id', 'employee_id');
+    }
 }

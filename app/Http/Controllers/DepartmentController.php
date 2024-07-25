@@ -16,7 +16,7 @@ class DepartmentController extends Controller
 
     public function nestedDepartments()
     {
-        $departments = Department::with('children.children')->whereNull('parent_id')->get();
+        $departments = Department::with('children')->whereNull('parent_id')->get();
         return response()->json(['departments' => $departments], 200);
     }
 
@@ -56,5 +56,22 @@ class DepartmentController extends Controller
         return response()->json(null, 204);
     }
 
+
+    public function addAccessGroups(Request $request)
+    {
+        $request->validate([
+            'department_id' => 'required|exists:departments,id',
+            'access_groups' => 'required|array',
+            'access_groups.*' => 'integer'
+        ]);
+
+        $department = Department::find($request->department_id);
+        $currentAccessGroups = $department->access_groups ?? [];
+
+        $updatedAccessGroups = array_unique(array_merge($currentAccessGroups, $request->access_groups));
+        $department->update(['access_groups' => $updatedAccessGroups]);
+
+        return response()->json(['department' => $department], 200);
+    }
     
 }

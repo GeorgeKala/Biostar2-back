@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Employee;
 use App\Http\Requests\EmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
+use Carbon\Carbon;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class EmployeeController extends Controller
 {
@@ -20,7 +20,7 @@ class EmployeeController extends Controller
      */
     public function index()
     {
-        $employees = Employee::with('department', 'group', 'schedule', 'holidays')->get();
+        $employees = Employee::with('department', 'group', 'schedule', 'holidays', 'user')->get();
         return response()->json($employees);
     }
 
@@ -30,6 +30,7 @@ class EmployeeController extends Controller
      * @param  \App\Http\Requests\EmployeeRequest  $request
      * @return \Illuminate\Http\Response
      */
+    
     public function store(EmployeeRequest $request)
     {
         
@@ -62,6 +63,17 @@ class EmployeeController extends Controller
                     $employee->holidays()->attach($validated['holidays']);
                 }
 
+
+                $department = $employee->department; 
+                $accessGroups = $department ? $department->access_groups : [];
+                $formattedAccessGroups = array_map(function ($groupId) {
+                    return ['id' => $groupId];
+                }, $accessGroups);
+
+                
+
+              
+
                 $biostarUserData = [
                     'User' => [
                         'user_id' =>  $userId,
@@ -75,6 +87,7 @@ class EmployeeController extends Controller
                         "user_group_id" => [
                             "id" => "1"
                         ],
+                        "access_groups" => $formattedAccessGroups
                     ]
                 ];
 
@@ -180,6 +193,7 @@ class EmployeeController extends Controller
      * @param  \App\Models\Employee  $employee
      * @return \Illuminate\Http\Response
      */
+    
     public function destroy(Employee $employee, Request $request)
     {
         $biostarUrl = 'https://10.150.20.173/api/users/' . $employee->id;
@@ -261,6 +275,7 @@ class EmployeeController extends Controller
         }
     }
 
+
     private function updateUserCards($userId, $iterIDVal, $bsSessionId)
     {
         
@@ -291,6 +306,91 @@ class EmployeeController extends Controller
             }
         } catch (\Exception $e) {
             throw new \Exception('Error updating user cards: ' . $e->getMessage());
+        }
+    }
+
+
+
+    public function searchEvents(Request $request)
+    {
+        $url = 'https://10.150.20.173/api/events/search';
+
+        $startOfDay = Carbon::now()->startOfDay()->format('Y-m-d\TH:i:s.000\Z');
+        $endOfDay = Carbon::now()->endOfDay()->format('Y-m-d\TH:i:s.000\Z');
+
+        $payload = [
+            "Query" => [
+                "limit" => 200,
+                "conditions" => [
+                    [
+                        "column" => "datetime",
+                        "operator" => 3,
+                        "values" => [
+                            $startOfDay,
+                            $endOfDay
+                        ]
+                    ],
+                    [
+                        "column" => 'device_id',
+                        "operator" => 2,
+                        "values" => [
+                            $request->device_id
+                        ]
+                    ],
+                    [
+                        "column" => "event_type_id",
+                        "operator" => 2,
+                        "values" => [
+                            "4102"
+                        ]
+                    ]
+                ],
+                "orders" => [
+                    [
+                        "column" => "datetime",
+                        "descending" => true
+                    ]
+                ]
+            ]
+        ];
+
+        try {
+            $response = Http::withOptions(['verify' => false])
+                ->withHeaders([
+                    "bs-session-id" => $request->header()['bs-session-id'][0]
+                ])
+                ->post($url, $payload);
+
+            if ($response->successful()) {
+                $events = $response->json()['EventCollection']['rows'];
+
+                $employeeIds = array_column($events, 'user_id.user_id');
+                $employees = Employee::whereIn('id', $employeeIds)->get();
+
+                $employeesById = $employees->keyBy('id');
+
+                $result = array_map(function($event) use ($employeesById) {
+                    $employeeId = $event['user_id']['user_id'];
+
+                    $resultEmployee = Employee::find($employeeId);
+
+                    return [
+                        'datetime' => Carbon::parse($event['server_datetime'])->format('Y-m-d H:i:s'),
+                        'employee_name' => $resultEmployee->fullname,
+                        'employee_id' => $employeeId,
+                        'department' => $resultEmployee->department->name,
+                        'employee_status' => 'დაშვებულია',
+                        'device_id' => $event['device_id']['id'],
+                        'device_name' => $event['device_id']['name'],
+                    ];
+                }, $events);
+
+                return response()->json($result);
+            } else {
+                return response()->json(['error' => 'Failed to fetch events', 'response' => $response->json()], $response->status());
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 

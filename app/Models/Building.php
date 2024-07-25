@@ -9,12 +9,22 @@ class Building extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'address'];
+    protected $fillable = ['name', 'address', 'parent_id'];
 
     public function departments()
     {
         return $this->belongsToMany(Department::class, 'building_department')
                     ->withPivot('id');
+    }
+    
+    public function parent()
+    {
+        return $this->belongsTo(Building::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Building::class, 'parent_id')->with('children');
     }
     
 }

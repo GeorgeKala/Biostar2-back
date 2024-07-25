@@ -16,8 +16,15 @@ class BuildingController extends Controller
      */
     public function index()
     {
-        $buildings = Building::all();
+        $buildings = Building::with('parent')->get();
         return response()->json(['data' => $buildings], 200);
+    }
+
+
+    public function nestedBuildings()
+    {
+        $building = Building::with('children.children')->whereNull('parent_id')->get();
+        return response()->json(['data' => $building], 200);
     }
 
     /**
@@ -26,12 +33,12 @@ class BuildingController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'address' => 'string|max:255',
+            'parent_id' => 'nullable|exists:buildings,id',
         ]);
 
         if ($validator->fails()) {
@@ -49,10 +56,9 @@ class BuildingController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    
     public function show($id)
     {
-        $building = Building::find($id);
+        $building = Building::with('parent')->find($id);
 
         if (!$building) {
             return response()->json(['error' => 'Building not found'], 404);
@@ -68,7 +74,6 @@ class BuildingController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-
     public function update(Request $request, $id)
     {
         $building = Building::find($id);
@@ -80,6 +85,7 @@ class BuildingController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'string|max:255',
             'address' => 'string|max:255',
+            'parent_id' => 'nullable|exists:buildings,id',
         ]);
 
         if ($validator->fails()) {
@@ -97,7 +103,6 @@ class BuildingController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-
     public function destroy($id)
     {
         $building = Building::find($id);
@@ -110,7 +115,6 @@ class BuildingController extends Controller
 
         return response()->json(['message' => 'Building deleted successfully'], 200);
     }
-
 
     public function attachDepartments(Request $request, Building $building)
     {
@@ -128,7 +132,6 @@ class BuildingController extends Controller
      * @param Building $building
      * @return \Illuminate\Http\JsonResponse
      */
-    
     public function detachDepartments(Request $request, Building $building)
     {
         $departmentId = $request->department_id;
@@ -137,7 +140,6 @@ class BuildingController extends Controller
 
         return response()->json(['message' => 'Department detached successfully']);
     }
-
 
     public function updateAttachedDepartments(Request $request, Building $building)
     {
@@ -153,7 +155,6 @@ class BuildingController extends Controller
             return response()->json(['error' => 'Department is not attached to this building.']);
         }
     }
-
 
     public function getBuildingsWithDepartments()
     {

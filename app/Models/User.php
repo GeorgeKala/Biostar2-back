@@ -23,7 +23,7 @@ class User extends Authenticatable
         'employee',
         'username',
         'user_type_id',
-        'employee',
+        'employee_id',
         'department_id'
     ];
 
@@ -54,5 +54,10 @@ class User extends Authenticatable
     public function department()
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function employee()
+    {
+        return $this->hasOne(Employee::class, 'id', 'employee_id');
     }
 }

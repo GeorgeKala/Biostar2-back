@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Schedule;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class ScheduleController extends Controller
 {
@@ -54,9 +55,44 @@ class ScheduleController extends Controller
         return response()->json($schedule);
     }
 
+
     public function destroy(Schedule $schedule)
     {
         $schedule->delete();
         return response()->json(null, 204);
     }
+
+
+    public function getSchedules(Request $request)
+    {
+        try {
+            $url = 'https://10.150.20.173:3002/tna/schedules';
+            $sessionId = $request->header('Bs-Session-Id');
+
+            $sessionId = "bs-ta-session-id={$sessionId}";
+
+            $response = Http::withOptions(['verify' => false])
+                            ->withHeaders(['Cookie' => $sessionId])
+                            ->get($url);
+
+            if ($response->successful()) {
+                $schedules = $response->json();
+
+                return response()->json($schedules);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to fetch schedules',
+                    'error' => $response->body()
+                ], $response->status());
+            }
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while fetching schedules',
+                'error' => $th->getMessage()
+            ], 500);
+        }
+    }
+
 }
