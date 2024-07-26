@@ -405,11 +405,11 @@ class EmployeeController extends Controller
 
     public function updateAccessGroups(Request $request, $id)
     {
-        $baseUrl = 'https://10.150.20.173';
-        $url = "{$baseUrl}/api/users/{$id}";
+       
+        $url = "https://10.150.20.173/api/access_groups/{$id}";
         $payload = [
-            'User' => [
-                'access_groups' => $request->input('access_groups', []),
+            'AccessGroup' => [
+                'new_users' => $request->input('new_users', []),
             ],
         ];
 
@@ -434,4 +434,111 @@ class EmployeeController extends Controller
             ], 500);
         }
     }
+
+
+    public function deleteEmployeeFromAccessGroup(Request $request, $id)
+    {
+        $url = "https://10.150.20.173/api/access_groups/{$id}";
+
+        $payload = [
+            'AccessGroup' => [
+                'delete_users' => $request->input('delete_users', []),
+            ],
+        ];
+
+        try {
+            $response = Http::withOptions(['verify' => false])
+                ->withHeaders([
+                    'bs-session-id' => $request->header('bs-session-id'),
+                ])
+                ->delete($url, $payload);
+
+            if ($response->successful()) {
+                return response()->json($response->json(), 200);
+            } else {
+                return response()->json([
+                    'error' => 'Failed to delete user from access group',
+                    'response' => $response->json(),
+                ], $response->status());
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+    public function getEmployeeWithBuildings(Request $request)
+    {
+        $sessionId = '278ce0774d064a909311050b765bed72';
+        $biostarUrl = 'https://10.150.20.173/api/users';
+
+        // Fetch users from Biostar API
+        $biostarResponse = Http::withOptions(['verify' => false])
+            ->withHeaders(['bs-session-id' => $sessionId])
+            ->get($biostarUrl);
+
+        if (!$biostarResponse->successful()) {
+            return response()->json(['error' => 'Failed to fetch users from Biostar API', 'response' => $biostarResponse->json()], $biostarResponse->status());
+        }
+
+        $biostarUsers = $biostarResponse->json()['UserCollection']['rows'] ?? [];
+
+        // Fetch employees and their associated data from the database
+        $employeeQuery = Employee::with('schedule', 'department.buildings', 'dayDetails.dayType', 'holidays');
+
+        if ($request->has('employee_id')) {
+            $employeeQuery->where('id', $request->input('employee_id'));
+        }
+
+        $employees = $employeeQuery->get()->keyBy('id');
+
+        $buildingId = $request->input('building_id');
+
+        // Merge and format data
+        $mergedData = [];
+        foreach ($biostarUsers as $user) {
+            $employee = $employees[$user['user_id']] ?? null;
+
+            if ($employee && $employee->department && $employee->department->buildings) {
+                foreach ($employee->department->buildings as $building) {
+                    if ($buildingId && $building->id != $buildingId) {
+                        continue;
+                    }
+                    
+                    $employeeAccessGroupIds = array_column($user['access_groups'], 'id');
+                    $isAccessGroupMatch = in_array($building->access_group, $employeeAccessGroupIds);
+
+                    $mergedData[] = [
+                        'user_id' => $user['user_id'],
+                        'fullname' => $employee->fullname ?? $user['name'],
+                        'personal_id' => $employee->personal_id,
+                        'department' => $employee->department->name,
+                        'employee_access_group' => $user['access_groups'],
+                        'building' => [
+                            'id' => $building->id,
+                            'name' => $building->name,
+                            'access_group' => $building->access_group ?? null,
+                            'is_access_group_match' => $isAccessGroupMatch,
+                        ],
+                        'is_not_accessed' => !$isAccessGroupMatch,
+                    ];
+                }
+            } else {
+                $mergedData[] = [
+                    'user_id' => $user['user_id'],
+                    'fullname' => $user['name'],
+                    'email' => $user['email'] ?? null,
+                    'department' => $employee ? $employee->department->name : null,
+                    'building' => null,
+                    'is_not_accessed' => true,
+                ];
+            }
+        }
+
+        return response()->json($mergedData);
+    }
+
+
 }

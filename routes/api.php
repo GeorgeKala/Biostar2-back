@@ -79,6 +79,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('employees')->group(function () {
         Route::get('/', [EmployeeController::class, 'index']);
         Route::get('/archived', [EmployeeController::class, 'archivedEmployees']);
+        Route::get('/buildings', [EmployeeController::class, 'getEmployeeWithBuildings']);
         Route::post('/', [EmployeeController::class, 'store']);
         Route::get('/{employee}', [EmployeeController::class, 'show']);
         Route::put('/{employee}', [EmployeeController::class, 'update']);
