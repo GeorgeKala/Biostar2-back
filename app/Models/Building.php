@@ -11,6 +11,10 @@ class Building extends Model
 
     protected $fillable = ['name', 'address', 'parent_id', 'access_group'];
 
+    protected $casts = [
+        'access_group' => 'array',
+    ];
+
     public function departments()
     {
         return $this->belongsToMany(Department::class, 'building_department')

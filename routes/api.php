@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{building}/attach-department', [BuildingController::class, 'attachDepartments']);
         Route::post('/{building}/detach-department', [BuildingController::class, 'detachDepartments']);
         Route::post('/{building}/update-department', [BuildingController::class, 'updateAttachedDepartments']);
+        Route::put('{id}/access-groups', [BuildingController::class, 'addAccessGroup']);
     });
 
     Route::prefix('departments')->group(function () {

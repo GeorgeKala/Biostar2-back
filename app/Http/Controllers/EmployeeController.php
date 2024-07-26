@@ -28,7 +28,6 @@ class EmployeeController extends Controller
         return response()->json($employees);
     }
 
-
     public function archivedEmployees(): JsonResponse
     {
         $archivedEmployees = Employee::with('department', 'group', 'schedule', 'holidays', 'user')
@@ -43,7 +42,7 @@ class EmployeeController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function store(EmployeeRequest $request): JsonResponse
+    public function store(EmployeeRequest $request)
     {
 
         $biostarUrl = 'https://10.150.20.173/api/users';
@@ -77,12 +76,12 @@ class EmployeeController extends Controller
 
                 $department = $employee->department;
                 if ($department && $department->buildings) {
-                    $accessGroups = $department->buildings->pluck('access_group')->unique();
+                    $accessGroups = $department->buildings->pluck('access_group')->flatten()->unique();
                     $formattedAccessGroups = $accessGroups->map(function ($groupId) {
                         return ['id' => $groupId];
                     })->values();
                 } else {
-                    $formattedAccessGroups = [];
+                    $formattedAccessGroups = collect();
                 }
 
                 $biostarUserData = [
@@ -405,7 +404,7 @@ class EmployeeController extends Controller
 
     public function updateAccessGroups(Request $request, $id)
     {
-       
+
         $url = "https://10.150.20.173/api/access_groups/{$id}";
         $payload = [
             'AccessGroup' => [
@@ -434,7 +433,6 @@ class EmployeeController extends Controller
             ], 500);
         }
     }
-
 
     public function deleteEmployeeFromAccessGroup(Request $request, $id)
     {
@@ -467,25 +465,21 @@ class EmployeeController extends Controller
             ], 500);
         }
     }
-
-
+    
     public function getEmployeeWithBuildings(Request $request)
     {
-        $sessionId = '278ce0774d064a909311050b765bed72';
+        $sessionId = $request->header('bs-session-id');
         $biostarUrl = 'https://10.150.20.173/api/users';
 
-        // Fetch users from Biostar API
         $biostarResponse = Http::withOptions(['verify' => false])
             ->withHeaders(['bs-session-id' => $sessionId])
             ->get($biostarUrl);
 
-        if (!$biostarResponse->successful()) {
+        if (! $biostarResponse->successful()) {
             return response()->json(['error' => 'Failed to fetch users from Biostar API', 'response' => $biostarResponse->json()], $biostarResponse->status());
         }
 
         $biostarUsers = $biostarResponse->json()['UserCollection']['rows'] ?? [];
-
-        // Fetch employees and their associated data from the database
         $employeeQuery = Employee::with('schedule', 'department.buildings', 'dayDetails.dayType', 'holidays');
 
         if ($request->has('employee_id')) {
@@ -495,8 +489,6 @@ class EmployeeController extends Controller
         $employees = $employeeQuery->get()->keyBy('id');
 
         $buildingId = $request->input('building_id');
-
-        // Merge and format data
         $mergedData = [];
         foreach ($biostarUsers as $user) {
             $employee = $employees[$user['user_id']] ?? null;
@@ -506,23 +498,28 @@ class EmployeeController extends Controller
                     if ($buildingId && $building->id != $buildingId) {
                         continue;
                     }
-                    
-                    $employeeAccessGroupIds = array_column($user['access_groups'], 'id');
-                    $isAccessGroupMatch = in_array($building->access_group, $employeeAccessGroupIds);
+
+                    $accessGroupIds = $building['access_group'];
+                    if (!is_array($accessGroupIds)) {
+                        $accessGroupIds = [];
+                    }
+
+                    $employeeAccessGroupIds = isset($user['access_groups']) ? array_column($user['access_groups'], 'id') : [];
+                    $isAccessGroupMatch = array_intersect($accessGroupIds, $employeeAccessGroupIds);
 
                     $mergedData[] = [
                         'user_id' => $user['user_id'],
                         'fullname' => $employee->fullname ?? $user['name'],
                         'personal_id' => $employee->personal_id,
                         'department' => $employee->department->name,
-                        'employee_access_group' => $user['access_groups'],
+                        'employee_access_group' => $user['access_groups'] ?? [],
                         'building' => [
                             'id' => $building->id,
                             'name' => $building->name,
-                            'access_group' => $building->access_group ?? null,
-                            'is_access_group_match' => $isAccessGroupMatch,
+                            'access_group' => $accessGroupIds,
+                            'is_access_group_match' => !empty($isAccessGroupMatch),
                         ],
-                        'is_not_accessed' => !$isAccessGroupMatch,
+                        'is_not_accessed' => empty($isAccessGroupMatch),
                     ];
                 }
             } else {
@@ -539,6 +536,4 @@ class EmployeeController extends Controller
 
         return response()->json($mergedData);
     }
-
-
 }

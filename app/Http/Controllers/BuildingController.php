@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Building;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -171,5 +172,21 @@ class BuildingController extends Controller
         }
 
         return response()->json($formattedData);
+    }
+
+    public function addAccessGroup(Request $request, $id): JsonResponse
+    {
+
+        $building = Building::findOrFail($id);
+
+        $existingAccessGroups = $building->access_group ? json_decode($building->access_group, true) : [];
+        $newAccessGroups = $request->input('access_group');
+
+        $mergedAccessGroups = array_values(array_unique(array_merge($existingAccessGroups, $newAccessGroups), SORT_REGULAR));
+
+        $building->access_group = json_encode($mergedAccessGroups);
+        $building->save();
+
+        return response()->json($building, 200);
     }
 }

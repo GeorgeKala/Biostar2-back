@@ -12,7 +12,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('buildings', function (Blueprint $table) {
-            $table->integer('access_group')->nullable();
+            $table->json('access_group')->nullable();
         });
     }
 
