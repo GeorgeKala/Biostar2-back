@@ -123,8 +123,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reports/login', [ReportController::class, 'login']);
     Route::post('/reports/monthly', [ReportController::class, 'getMonthlyReports']);
 
+    //day details
     Route::post('/employee-day-detail', [ReportController::class, 'updateOrCreateDayDetail']);
     Route::post('/employee-day-detail/update-day-type', [ReportController::class, 'updateDayTypeForDateRange']);
+    Route::delete('/employee-day-detail/{id}', [ReportController::class, 'deleteDayDetail']);
 
     Route::post('/fetch-report', [ReportController::class, 'fetchReport']);
 

@@ -36,6 +36,7 @@ class CommentController extends Controller
 
             $details = $query->get()->map(function ($detail) {
                 return [
+                    'id' => $detail->id,
                     'employee' => $detail->employee->fullname,
                     'department' => $detail->employee->department->name ?? null,
                     'comment' => $detail->comment,

@@ -16,6 +16,8 @@ class EmployeeDayDetail extends Model
         'comment',
         'forgive_type_id',
         'user_id',
+        'final_penalized_time',
+        'comment_datetime',
     ];
 
     public function employee()
