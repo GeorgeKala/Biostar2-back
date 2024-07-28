@@ -21,7 +21,7 @@ class AccessGroupController extends Controller
                 ->get($accessGroupsUrl);
 
             if ($accessGroupsResponse->successful()) {
-                $accessGroupsData = $accessGroupsResponse->json();
+                $accessGroupsData = $accessGroupsResponse->json()['AccessGroupCollection']['rows'];
 
                 return response()->json($accessGroupsData);
             } else {

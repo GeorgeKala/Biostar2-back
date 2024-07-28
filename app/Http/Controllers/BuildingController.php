@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Building;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 
 class BuildingController extends Controller
@@ -174,19 +174,92 @@ class BuildingController extends Controller
         return response()->json($formattedData);
     }
 
-    public function addAccessGroup(Request $request, $id): JsonResponse
+    public function addAccessGroup(Request $request, $id)
     {
 
         $building = Building::findOrFail($id);
 
-        $existingAccessGroups = $building->access_group ? json_decode($building->access_group, true) : [];
+        $existingAccessGroups = $building->access_group ? $building->access_group : [];
+
         $newAccessGroups = $request->input('access_group');
+
+        $newAccessGroups = array_map('intval', $newAccessGroups);
 
         $mergedAccessGroups = array_values(array_unique(array_merge($existingAccessGroups, $newAccessGroups), SORT_REGULAR));
 
-        $building->access_group = json_encode($mergedAccessGroups);
+        $building->access_group = $mergedAccessGroups;
         $building->save();
 
         return response()->json($building, 200);
+    }
+
+    public function removeAccessGroup(Request $request, $id)
+    {
+        $building = Building::findOrFail($id);
+
+        $accessGroupId = $request->input('access_group_id');
+
+        $existingAccessGroups = $building->access_group ? $building->access_group : [];
+
+        $updatedAccessGroups = array_filter($existingAccessGroups, function ($groupId) use ($accessGroupId) {
+            return $groupId != $accessGroupId;
+        });
+
+        $building->access_group = array_values($updatedAccessGroups); // Re-index the array
+        $building->save();
+
+        return response()->json($building, 200);
+    }
+
+    public function getBuildingsWithAccessGroups(Request $request)
+    {
+        $sessionId = $request->header('bs-session-id');
+        $buildings = Building::with(['departments', 'children'])->get();
+        $accessGroupsUrl = 'https://10.150.20.173/api/access_groups';
+        try {
+            $accessGroupsResponse = Http::withOptions(['verify' => false])
+                ->withHeaders(['bs-session-id' => $sessionId])
+                ->get($accessGroupsUrl);
+
+            if (! $accessGroupsResponse->successful()) {
+                return response()->json(['error' => 'Failed to fetch access groups data'], $accessGroupsResponse->status());
+            }
+
+            $accessGroupsData = $accessGroupsResponse->json();
+            $accessGroups = $accessGroupsData['AccessGroupCollection']['rows'];
+
+            $formattedData = [];
+
+            foreach ($buildings as $building) {
+                $buildingAccessGroups = $building->access_group;
+
+                if (! empty($buildingAccessGroups)) {
+                    $filteredAccessGroups = array_filter($accessGroups, function ($group) use ($buildingAccessGroups) {
+                        return in_array($group['id'], $buildingAccessGroups);
+                    });
+
+                    foreach ($filteredAccessGroups as $group) {
+                        $formattedData[] = [
+                            'building_id' => $building->id,
+                            'building_name' => $building->name,
+                            'access_group_id' => $group['id'],
+                            'access_group_name' => $group['name'],
+                        ];
+                    }
+                } else {
+                    $formattedData[] = [
+                        'building_id' => $building->id,
+                        'building_name' => $building->name,
+                        'access_group_id' => null,
+                        'access_group_name' => null,
+                    ];
+                }
+            }
+
+            return response()->json($formattedData);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }

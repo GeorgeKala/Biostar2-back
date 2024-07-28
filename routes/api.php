@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BuildingController;
 use App\Http\Controllers\CommandTypeController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\DayTypeController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\EmployeeController;
@@ -47,7 +48,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{building}/detach-department', [BuildingController::class, 'detachDepartments']);
         Route::post('/{building}/update-department', [BuildingController::class, 'updateAttachedDepartments']);
         Route::put('{id}/access-groups', [BuildingController::class, 'addAccessGroup']);
+        Route::delete('{id}/access-groups', [BuildingController::class, 'removeAccessGroup']);
     });
+    Route::get('/buildings-with-access-groups', [BuildingController::class, 'getBuildingsWithAccessGroups']);
 
     Route::prefix('departments')->group(function () {
         Route::get('/', [DepartmentController::class, 'index']);
@@ -127,11 +130,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/employee-day-detail', [ReportController::class, 'updateOrCreateDayDetail']);
     Route::post('/employee-day-detail/update-day-type', [ReportController::class, 'updateDayTypeForDateRange']);
     Route::delete('/employee-day-detail/{id}', [ReportController::class, 'deleteDayDetail']);
+    Route::post('/employee-day-detail/delete-day-type', [ReportController::class, 'deleteDayTypeForDateRange']);
+
+    //day types
+    Route::resource('day-types', DayTypeController::class);
 
     Route::post('/fetch-report', [ReportController::class, 'fetchReport']);
 
     Route::post('/commented-details', [CommentController::class, 'fetchCommentedDetails']);
     Route::post('/employee-orders', [CommentController::class, 'fetchOrders']);
+    Route::get('/analyzed-comments', [CommentController::class, 'getAnalyzedComments']);
 
     Route::get('/get-schedules', [ScheduleController::class, 'getSchedules']);
 
@@ -142,3 +150,5 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
 });
+
+Route::get('/analyzed-comments', [CommentController::class, 'getAnalyzedComments']);

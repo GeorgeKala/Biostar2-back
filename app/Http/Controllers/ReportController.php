@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Employee;
 use App\Models\EmployeeDayDetail;
 use App\Models\ForgiveType;
 use Illuminate\Http\Request;
@@ -307,6 +306,7 @@ class ReportController extends Controller
         }
     }
 
+    //make order on day detail
     public function updateDayTypeForDateRange(Request $request)
     {
         $validatedData = $request->validate([
@@ -340,6 +340,32 @@ class ReportController extends Controller
         }
     }
 
+    public function deleteDayTypeForDateRange(Request $request)
+    {
+        $validatedData = $request->validate([
+            'employee_id' => 'required|exists:employees,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
+
+        try {
+            $datesRange = $this->createDateRangeArray($validatedData['start_date'], $validatedData['end_date']);
+            foreach ($datesRange as $date) {
+                EmployeeDayDetail::where([
+                    'employee_id' => $validatedData['employee_id'],
+                    'date' => $date,
+                ])->delete();
+            }
+
+            return response()->json(['message' => 'Day details deleted successfully for the specified date range.']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete day details for the specified date range.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 
     public function deleteDayDetail($id)
     {
@@ -348,6 +374,7 @@ class ReportController extends Controller
 
             if ($dayDetail) {
                 $dayDetail->delete();
+
                 return response()->json(['message' => 'Day detail deleted successfully.']);
             } else {
                 return response()->json(['error' => 'Day detail not found.'], 404);
@@ -360,7 +387,6 @@ class ReportController extends Controller
             ], 500);
         }
     }
-
 
     public function fetchReport(Request $request)
     {

@@ -207,24 +207,39 @@ class EmployeeController extends Controller
     public function destroy(Employee $employee, Request $request): JsonResponse
     {
         $biostarUrl = 'https://10.150.20.173/api/users/'.$employee->id;
+        $newExpiryTime = now();
+        $newExpiryTimeFormatted = $newExpiryTime->format('Y-m-d\TH:i:s.00\Z');
+        $newExpiryTimeForDB = $newExpiryTime->format('Y-m-d H:i:s');
+
         try {
             DB::beginTransaction();
+
+            $biostarUserData = [
+                'User' => [
+                    'expiry_datetime' => $newExpiryTimeFormatted,
+                    'cards' => [
+
+                    ],
+                ],
+            ];
 
             $response = Http::withOptions(['verify' => false])
                 ->withHeaders([
                     'bs-session-id' => $request->header()['bs-session-id'][0],
                 ])
-                ->delete($biostarUrl);
+                ->put($biostarUrl, $biostarUserData);
 
             if ($response->successful()) {
-                $employee->delete();
+                $employee->expiry_datetime = $newExpiryTimeForDB;
+                $employee->save();
+
                 DB::commit();
 
-                return response()->json(null, 204);
+                return response()->json(['message' => 'Expiry time updated successfully'], 200);
             } else {
                 DB::rollBack();
 
-                return response()->json(['error' => 'Failed to delete user in Biostar API', 'response' => $response->json()], $response->status());
+                return response()->json(['error' => 'Failed to update expiry time in Biostar API', 'response' => $response->json()], $response->status());
             }
         } catch (RequestException $e) {
             DB::rollBack();
@@ -465,7 +480,7 @@ class EmployeeController extends Controller
             ], 500);
         }
     }
-    
+
     public function getEmployeeWithBuildings(Request $request)
     {
         $sessionId = $request->header('bs-session-id');
@@ -500,7 +515,7 @@ class EmployeeController extends Controller
                     }
 
                     $accessGroupIds = $building['access_group'];
-                    if (!is_array($accessGroupIds)) {
+                    if (! is_array($accessGroupIds)) {
                         $accessGroupIds = [];
                     }
 
@@ -517,7 +532,7 @@ class EmployeeController extends Controller
                             'id' => $building->id,
                             'name' => $building->name,
                             'access_group' => $accessGroupIds,
-                            'is_access_group_match' => !empty($isAccessGroupMatch),
+                            'is_access_group_match' => ! empty($isAccessGroupMatch),
                         ],
                         'is_not_accessed' => empty($isAccessGroupMatch),
                     ];
