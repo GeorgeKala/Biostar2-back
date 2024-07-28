@@ -138,12 +138,14 @@ class ReportController extends Controller
                             'day_type' => '',
                             'comment' => '',
                             'forgive_type' => '',
+                            'day_type_id' => ''
                         ];
 
                         $dayDetail = $employee->dayDetails->where('date', $date)->first();
 
                         if ($dayDetail) {
                             if ($dayDetail->dayType !== null) {
+                                $employeeData['day_type_id'] = $dayDetail->day_type_id;
                                 $employeeData['day_type'] = $dayDetail->dayType ? $dayDetail->dayType->name : '';
                             } elseif ($employee->holidays->contains('name', $weekDayGeorgian)) {
                                 $employeeData['day_type'] = 'არა სამუშაო დღე';
@@ -151,7 +153,7 @@ class ReportController extends Controller
                                 $employeeData['day_type'] = 'სამუშაო დღე';
                             }
                             $employeeData['comment'] = $dayDetail->comment;
-                            $employeeData['forgive_type'] = $dayDetail->forgiveType ? $dayDetail->forgiveType->name : '';
+                            $employeeData['forgive_type'] = $dayDetail->forgiveType ? $dayDetail->forgiveType : '';
                         } else {
                             if ($employee->holidays->contains('name', $weekDayGeorgian)) {
                                 $employeeData['day_type'] = 'არა სამუშაო დღე';
@@ -513,12 +515,15 @@ class ReportController extends Controller
                             'day_type' => '',
                             'comment' => '',
                             'forgive_type' => '',
+                            'day_type_id' =>  null
                         ];
 
                         $dayDetail = $employee->dayDetails->where('date', $report['datetime'])->first();
 
                         if ($dayDetail) {
+                            $employeeData['day_type_id'] = $dayDetail->day_type_id;
                             if ($dayDetail->dayType !== null) {
+
                                 $employeeData['day_type'] = $dayDetail->dayType ? $dayDetail->dayType->name : '';
                             } elseif ($employee->holidays->contains('name', $weekDayGeorgian)) {
                                 $employeeData['day_type'] = 'არა სამუშაო დღე';

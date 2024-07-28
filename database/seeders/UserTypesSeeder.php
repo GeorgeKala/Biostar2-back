@@ -13,23 +13,12 @@ class UserTypesSeeder extends Seeder
     public function run()
     {
         $userTypes = [
-            'ადმინისტრატორი',
-            'მენეჯერი',
-            'HR',
-            'IT',
-            'საწყობის უფროსი',
-            'მენეჯერი 1',
-            'სამზარეულო',
-            'ოფის-მენეჯერი',
-            'მარკეტი არეული',
-            'მენეჯერი-რეგიონები',
-            'ლილო',
+            ['name' => 'ადმინისტრატორი', 'has_full_access' => true],
+            ['name' => 'დეპარტამენტის ხელმძღვანელი', 'has_full_access' => false],
         ];
 
         foreach ($userTypes as $userType) {
-            DB::table('user_types')->insert([
-                'name' => $userType,
-            ]);
+            DB::table('user_types')->insert($userType);
         }
     }
 }

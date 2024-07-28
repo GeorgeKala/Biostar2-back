@@ -11,5 +11,6 @@ class UserTypes extends Model
 
     protected $fillable = [
         'name',
+        'has_full_access',
     ];
 }

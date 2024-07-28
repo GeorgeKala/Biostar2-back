@@ -19,14 +19,27 @@ class EmployeeController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $employees = Employee::with('department', 'group', 'schedule', 'holidays', 'user')
-            ->whereNull('expiry_datetime')
-            ->get();
+        $departmentId = $request->input('department_id');
+        $fullname = $request->input('fullname');
+
+        $query = Employee::with('department', 'group', 'schedule', 'holidays', 'user')
+            ->whereNull('expiry_datetime');
+
+        if ($departmentId) {
+            $query->where('department_id', $departmentId);
+        }
+
+        if ($fullname) {
+            $query->where('fullname', 'like', '%' . $fullname . '%');
+        }
+
+        $employees = $query->get();
 
         return response()->json($employees);
     }
+
 
     public function archivedEmployees(): JsonResponse
     {

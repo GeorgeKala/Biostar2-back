@@ -5,14 +5,23 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
     public function index()
     {
         $users = User::with('userType', 'department', 'employee')->get();
-
         return response()->json($users);
+    }
+
+
+    public function authenticatedUser()
+    {
+        $user = Auth::user();
+        $user->load('userType', 'department', 'employee');
+
+        return response()->json($user);
     }
 
     /**
