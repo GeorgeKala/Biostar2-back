@@ -37,8 +37,8 @@ class AuthController extends Controller
 
         $userData = [
             'User' => [
-                'login_id' => $request->username,
-                'password' => $request->password,
+                'login_id' => env('BIOSTAR_ADMIN_USER'),
+                'password' => env('BIOSTAR_ADMIN_PASSWORD'),
             ],
         ];
 

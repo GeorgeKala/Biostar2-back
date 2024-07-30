@@ -19,6 +19,7 @@ class UserSeeder extends Seeder
             'username' => '3',
             'user_type_id' => 1,
             'employee_id' => null,
+            
         ]);
     }
 }

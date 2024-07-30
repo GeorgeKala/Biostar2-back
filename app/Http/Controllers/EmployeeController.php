@@ -432,28 +432,54 @@ class EmployeeController extends Controller
 
     public function updateAccessGroups(Request $request, $id)
     {
-
-        $url = "https://10.150.20.173/api/access_groups/{$id}";
-        $payload = [
-            'AccessGroup' => [
-                'new_users' => $request->input('new_users', []),
-            ],
-        ];
+        $url = "https://10.150.20.173/api/users/{$id}";
+        $newAccessGroups = $request->input('access_groups', []);
 
         try {
             $response = Http::withOptions(['verify' => false])
                 ->withHeaders([
                     'bs-session-id' => $request->header('bs-session-id'),
                 ])
+                ->get($url);
+
+            if ($response->failed()) {
+                return response()->json([
+                    'error' => 'Failed to fetch user data',
+                    'response' => $response->json(),
+                ], $response->status());
+            }
+
+            $existingUser = $response->json();
+
+           
+            $existingAccessGroups = $existingUser['User']['access_groups'] ?? [];
+            $existingAccessGroupIds = array_map(function($group) {
+                return $group['id'];
+            }, $existingAccessGroups);
+
+            $mergedAccessGroupIds = array_unique(array_merge($existingAccessGroupIds, $newAccessGroups));
+
+            $payload = [
+                'User' => [
+                    'access_groups' => array_map(function($groupId) {
+                        return ['id' => $groupId];
+                    }, $mergedAccessGroupIds),
+                ],
+            ];
+
+            $updateResponse = Http::withOptions(['verify' => false])
+                ->withHeaders([
+                    'bs-session-id' => $request->header('bs-session-id'),
+                ])
                 ->put($url, $payload);
 
-            if ($response->successful()) {
-                return response()->json($response->json(), 200);
+            if ($updateResponse->successful()) {
+                return response()->json($updateResponse->json(), 200);
             } else {
                 return response()->json([
                     'error' => 'Failed to update access groups',
-                    'response' => $response->json(),
-                ], $response->status());
+                    'response' => $updateResponse->json(),
+                ], $updateResponse->status());
             }
         } catch (\Exception $e) {
             return response()->json([
@@ -462,30 +488,54 @@ class EmployeeController extends Controller
         }
     }
 
-    public function deleteEmployeeFromAccessGroup(Request $request, $id)
+    public function removeAccessGroups(Request $request, $id)
     {
-        $url = "https://10.150.20.173/api/access_groups/{$id}";
-
-        $payload = [
-            'AccessGroup' => [
-                'delete_users' => $request->input('delete_users', []),
-            ],
-        ];
+        $url = "https://10.150.20.173/api/users/{$id}";
+        $accessGroupsToRemove = $request->input('access_groups_to_remove', []);
 
         try {
             $response = Http::withOptions(['verify' => false])
                 ->withHeaders([
                     'bs-session-id' => $request->header('bs-session-id'),
                 ])
-                ->delete($url, $payload);
+                ->get($url);
 
-            if ($response->successful()) {
-                return response()->json($response->json(), 200);
-            } else {
+            if ($response->failed()) {
                 return response()->json([
-                    'error' => 'Failed to delete user from access group',
+                    'error' => 'Failed to fetch user data',
                     'response' => $response->json(),
                 ], $response->status());
+            }
+ 
+            $existingUser = $response->json();
+            $existingAccessGroups = $existingUser['User']['access_groups'] ?? [];
+            $existingAccessGroupIds = array_map(function($group) {
+                return $group['id'];
+            }, $existingAccessGroups);
+
+            $finalAccessGroupIds = array_diff($existingAccessGroupIds, $accessGroupsToRemove);
+
+            $payload = [
+                'User' => [
+                    'access_groups' => array_map(function($groupId) {
+                        return ['id' => $groupId];
+                    }, $finalAccessGroupIds),
+                ],
+            ];
+
+            $updateResponse = Http::withOptions(['verify' => false])
+                ->withHeaders([
+                    'bs-session-id' => $request->header('bs-session-id'),
+                ])
+                ->put($url, $payload);
+
+            if ($updateResponse->successful()) {
+                return response()->json($updateResponse->json(), 200);
+            } else {
+                return response()->json([
+                    'error' => 'Failed to update access groups',
+                    'response' => $updateResponse->json(),
+                ], $updateResponse->status());
             }
         } catch (\Exception $e) {
             return response()->json([
@@ -496,6 +546,8 @@ class EmployeeController extends Controller
 
     public function getEmployeeWithBuildings(Request $request)
     {
+
+       
         $sessionId = $request->header('bs-session-id');
         $biostarUrl = 'https://10.150.20.173/api/users';
 
@@ -507,25 +559,30 @@ class EmployeeController extends Controller
             return response()->json(['error' => 'Failed to fetch users from Biostar API', 'response' => $biostarResponse->json()], $biostarResponse->status());
         }
 
+       
         $biostarUsers = $biostarResponse->json()['UserCollection']['rows'] ?? [];
         $employeeQuery = Employee::with('schedule', 'department.buildings', 'dayDetails.dayType', 'holidays');
-
+        
         if ($request->has('employee_id')) {
             $employeeQuery->where('id', $request->input('employee_id'));
         }
 
-        $employees = $employeeQuery->get()->keyBy('id');
+
+        $employees = $employeeQuery->get();
 
         $buildingId = $request->input('building_id');
         $mergedData = [];
+
+        
         foreach ($biostarUsers as $user) {
-            $employee = $employees[$user['user_id']] ?? null;
+           
+            $employee = $employees->firstWhere('id', $user['user_id']);
 
             if ($employee && $employee->department && $employee->department->buildings) {
                 foreach ($employee->department->buildings as $building) {
-                    if ($buildingId && $building->id != $buildingId) {
-                        continue;
-                    }
+                    // if ($buildingId && $building->id != $buildingId) {
+                    //     continue;
+                    // }
 
                     $accessGroupIds = $building['access_group'];
                     if (! is_array($accessGroupIds)) {
@@ -550,15 +607,6 @@ class EmployeeController extends Controller
                         'is_not_accessed' => empty($isAccessGroupMatch),
                     ];
                 }
-            } else {
-                $mergedData[] = [
-                    'user_id' => $user['user_id'],
-                    'fullname' => $user['name'],
-                    'email' => $user['email'] ?? null,
-                    'department' => $employee ? $employee->department->name : null,
-                    'building' => null,
-                    'is_not_accessed' => true,
-                ];
             }
         }
 

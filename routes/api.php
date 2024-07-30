@@ -88,6 +88,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/{employee}', [EmployeeController::class, 'update']);
         Route::delete('/{employee}', [EmployeeController::class, 'destroy']);
         Route::put('/access_groups/{id}', [EmployeeController::class, 'updateAccessGroups']);
+        Route::put('/access_groups/{id}/remove', [EmployeeController::class, 'removeAccessGroups']);
     });
 
     Route::prefix('users')->group(function () {

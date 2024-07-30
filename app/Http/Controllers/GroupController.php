@@ -18,9 +18,9 @@ class GroupController extends Controller
     {
         $request->validate([
             'name' => 'required|string|unique:groups',
-            'control' => 'required|boolean',
-            'break_control' => 'required|boolean',
-            'leave_control' => 'required|boolean',
+            'control' => 'nullable|boolean',
+            'break_control' => 'nullable|boolean',
+            'leave_control' => 'nullable|boolean',
         ]);
 
         $group = Group::create($request->all());
@@ -37,9 +37,9 @@ class GroupController extends Controller
     {
         $request->validate([
             'name' => 'required|string|unique:groups,name,'.$group->id,
-            'control' => 'required|boolean',
-            'break_control' => 'required|boolean',
-            'leave_control' => 'required|boolean',
+            'control' => 'nullable|boolean',
+            'break_control' => 'nullable|boolean',
+            'leave_control' => 'nullable|boolean',
         ]);
 
         $group->update($request->all());
