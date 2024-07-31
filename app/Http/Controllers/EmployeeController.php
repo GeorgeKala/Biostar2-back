@@ -166,13 +166,15 @@ class EmployeeController extends Controller
      * @param  \App\Http\Requests\EmployeeRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function update(UpdateEmployeeRequest $request, Employee $employee): JsonResponse
+    public function update(UpdateEmployeeRequest $request, Employee $employee)
     {
-
         DB::beginTransaction();
 
         try {
             $validated = $request->validated();
+            $newCardNumber = $request->input('card_number');
+            $oldCardNumber = $employee->card_number;
+
             $employee->fill($validated);
             $employee->save();
 
@@ -181,33 +183,33 @@ class EmployeeController extends Controller
             } else {
                 $employee->holidays()->detach();
             }
-
-            $biostarUrl = 'https://10.150.20.173/api/users/'.$employee->id;
-
+            $biostarUrl = 'https://10.150.20.173/api/users/' . $employee->id;
             $biostarUserData = [
                 'User' => [
                     'name' => $validated['fullname'],
                 ],
             ];
+
             $response = Http::withOptions(['verify' => false])
                 ->withHeaders([
                     'bs-session-id' => $request->session_id,
                 ])
                 ->put($biostarUrl, $biostarUserData);
 
-            if ($response->successful()) {
-
-                DB::commit();
-
-                return response()->json($employee);
-            } else {
+            if (!$response->successful()) {
                 DB::rollBack();
-
                 return response()->json(['error' => 'Failed to update user in Biostar API', 'response' => $response->json()], $response->status());
             }
+
+            if ($newCardNumber && $newCardNumber !== $oldCardNumber) {
+                $newCardId = $this->makeCard($newCardNumber, $request->session_id);
+                $finalResult = $this->updateUserCards($employee->id, $newCardId, $request->session_id);
+            }
+
+            DB::commit();
+            return response()->json($employee);
         } catch (\Exception $e) {
             DB::rollBack();
-
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -366,13 +368,13 @@ class EmployeeController extends Controller
                             $endOfDay,
                         ],
                     ],
-                    [
-                        'column' => 'device_id',
-                        'operator' => 2,
-                        'values' => [
-                            $request->device_id,
-                        ],
-                    ],
+                    // [
+                    //     'column' => 'device_id',
+                    //     'operator' => 2,
+                    //     'values' => [
+                    //         $request->device_id,
+                    //     ],
+                    // ],
                     [
                         'column' => 'event_type_id',
                         'operator' => 2,
@@ -544,6 +546,7 @@ class EmployeeController extends Controller
         }
     }
 
+
     public function getEmployeeWithBuildings(Request $request)
     {
 
@@ -559,7 +562,6 @@ class EmployeeController extends Controller
             return response()->json(['error' => 'Failed to fetch users from Biostar API', 'response' => $biostarResponse->json()], $biostarResponse->status());
         }
 
-       
         $biostarUsers = $biostarResponse->json()['UserCollection']['rows'] ?? [];
         $employeeQuery = Employee::with('schedule', 'department.buildings', 'dayDetails.dayType', 'holidays');
         
