@@ -296,6 +296,7 @@ class ReportController extends Controller
                 $reports = $response->json();
                 $rows = $reports['EventCollection']['rows'] ?? [];
 
+
                 $employeesQuery = \App\Models\Employee::with('schedule', 'department', 'dayDetails.dayType', 'holidays');
 
                 if ($departmentId) {
@@ -375,8 +376,11 @@ class ReportController extends Controller
                         $dailyUsages = [];
                         if (is_array($rows)) {
                             foreach ($rows as $row) {
-                                if (isset($row['server_datetime']) && isset($row['user_id']) && $row['user_id']['user_id'] == $userId) {
+                                if (isset($row['server_datetime']) && isset($row['user_id']) && $row['user_id']['user_id'] !== $userId) {
                                     $usageDatetime = $row['server_datetime'];
+                                    $dailyUsages[] = $usageDatetime;
+
+                                    
                                     $eventDate = substr($usageDatetime, 0, 10);
 
                                     if ($eventDate == $date) {
@@ -387,6 +391,7 @@ class ReportController extends Controller
                                 }
                             }
                         }
+
 
                         if (! empty($dailyUsages)) {
                             sort($dailyUsages);
@@ -440,6 +445,7 @@ class ReportController extends Controller
                                 }
                             }
                         }
+                        
 
                         $data[] = $employeeData;
                     }

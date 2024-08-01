@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\EmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
+use App\Models\Building;
 use App\Models\Employee;
 use Carbon\Carbon;
 use GuzzleHttp\Exception\RequestException;
@@ -368,13 +369,13 @@ class EmployeeController extends Controller
                             $endOfDay,
                         ],
                     ],
-                    // [
-                    //     'column' => 'device_id',
-                    //     'operator' => 2,
-                    //     'values' => [
-                    //         $request->device_id,
-                    //     ],
-                    // ],
+                    [
+                        'column' => 'device_id',
+                        'operator' => 2,
+                        'values' => [
+                            $request->device_id,
+                        ],
+                    ],
                     [
                         'column' => 'event_type_id',
                         'operator' => 2,
@@ -547,10 +548,77 @@ class EmployeeController extends Controller
     }
 
 
-    public function getEmployeeWithBuildings(Request $request)
-    {
+    // public function getEmployeeWithBuildings(Request $request)
+    // {
 
        
+    //     $sessionId = $request->header('bs-session-id');
+    //     $biostarUrl = 'https://10.150.20.173/api/users';
+
+    //     $biostarResponse = Http::withOptions(['verify' => false])
+    //         ->withHeaders(['bs-session-id' => $sessionId])
+    //         ->get($biostarUrl);
+
+    //     if (! $biostarResponse->successful()) {
+    //         return response()->json(['error' => 'Failed to fetch users from Biostar API', 'response' => $biostarResponse->json()], $biostarResponse->status());
+    //     }
+
+    //     $biostarUsers = $biostarResponse->json()['UserCollection']['rows'] ?? [];
+    //     $employeeQuery = Employee::with('schedule', 'department.buildings', 'dayDetails.dayType', 'holidays');
+        
+    //     if ($request->has('employee_id')) {
+    //         $employeeQuery->where('id', $request->input('employee_id'));
+    //     }
+
+
+    //     $employees = $employeeQuery->get();
+
+    //     $buildingId = $request->input('building_id');
+    //     $mergedData = [];
+
+        
+    //     foreach ($biostarUsers as $user) {
+           
+    //         $employee = $employees->firstWhere('id', $user['user_id']);
+
+    //         if ($employee && $employee->department && $employee->department->buildings) {
+    //             foreach ($employee->department->buildings as $building) {
+    //                 if ($buildingId && $building->id != $buildingId) {
+    //                     continue;
+    //                 }
+
+    //                 $accessGroupIds = $building['access_group'];
+    //                 if (! is_array($accessGroupIds)) {
+    //                     $accessGroupIds = [];
+    //                 }
+
+    //                 $employeeAccessGroupIds = isset($user['access_groups']) ? array_column($user['access_groups'], 'id') : [];
+    //                 $isAccessGroupMatch = array_intersect($accessGroupIds, $employeeAccessGroupIds);
+
+    //                 $mergedData[] = [
+    //                     'user_id' => $user['user_id'],
+    //                     'fullname' => $employee->fullname ?? $user['name'],
+    //                     'personal_id' => $employee->personal_id,
+    //                     'department' => $employee->department->name,
+    //                     'employee_access_group' => $user['access_groups'] ?? [],
+    //                     'building' => [
+    //                         'id' => $building->id,
+    //                         'name' => $building->name,
+    //                         'access_group' => $accessGroupIds,
+    //                         'is_access_group_match' => ! empty($isAccessGroupMatch),
+    //                     ],
+    //                     'is_not_accessed' => empty($isAccessGroupMatch),
+    //                 ];
+    //             }
+    //         }
+    //     }
+
+    //     return response()->json($mergedData);
+    // }
+
+
+    public function getEmployeeWithBuildings(Request $request)
+    {
         $sessionId = $request->header('bs-session-id');
         $biostarUrl = 'https://10.150.20.173/api/users';
 
@@ -558,55 +626,60 @@ class EmployeeController extends Controller
             ->withHeaders(['bs-session-id' => $sessionId])
             ->get($biostarUrl);
 
-        if (! $biostarResponse->successful()) {
-            return response()->json(['error' => 'Failed to fetch users from Biostar API', 'response' => $biostarResponse->json()], $biostarResponse->status());
+        if (!$biostarResponse->successful()) {
+            return response()->json([
+                'error' => 'Failed to fetch users from Biostar API',
+                'response' => $biostarResponse->json()
+            ], $biostarResponse->status());
         }
 
         $biostarUsers = $biostarResponse->json()['UserCollection']['rows'] ?? [];
-        $employeeQuery = Employee::with('schedule', 'department.buildings', 'dayDetails.dayType', 'holidays');
-        
+        $employeeQuery = Employee::with('schedule', 'dayDetails.dayType', 'holidays');
+
         if ($request->has('employee_id')) {
             $employeeQuery->where('id', $request->input('employee_id'));
         }
 
-
         $employees = $employeeQuery->get();
-
         $buildingId = $request->input('building_id');
         $mergedData = [];
 
-        
+        $buildings = Building::all();
+
         foreach ($biostarUsers as $user) {
-           
             $employee = $employees->firstWhere('id', $user['user_id']);
 
-            if ($employee && $employee->department && $employee->department->buildings) {
-                foreach ($employee->department->buildings as $building) {
-                    // if ($buildingId && $building->id != $buildingId) {
-                    //     continue;
-                    // }
+            if (!$employee) {
+                continue;
+            }
 
-                    $accessGroupIds = $building['access_group'];
-                    if (! is_array($accessGroupIds)) {
-                        $accessGroupIds = [];
-                    }
+            foreach ($buildings as $building) {
+                if ($buildingId && $building->id != $buildingId) {
+                    continue;
+                }
 
-                    $employeeAccessGroupIds = isset($user['access_groups']) ? array_column($user['access_groups'], 'id') : [];
-                    $isAccessGroupMatch = array_intersect($accessGroupIds, $employeeAccessGroupIds);
+                $accessGroupIds = $building['access_group'];
+                if (!is_array($accessGroupIds)) {
+                    $accessGroupIds = [];
+                }
 
+                $employeeAccessGroupIds = isset($user['access_groups']) ? array_column($user['access_groups'], 'id') : [];
+                $isAccessGroupMatch = array_intersect($accessGroupIds, $employeeAccessGroupIds);
+
+                // Only include if there is a match in access groups
+                if (!empty($isAccessGroupMatch)) {
                     $mergedData[] = [
                         'user_id' => $user['user_id'],
                         'fullname' => $employee->fullname ?? $user['name'],
                         'personal_id' => $employee->personal_id,
-                        'department' => $employee->department->name,
+                        'department' => $employee->department->name ?? null,
                         'employee_access_group' => $user['access_groups'] ?? [],
                         'building' => [
                             'id' => $building->id,
                             'name' => $building->name,
                             'access_group' => $accessGroupIds,
-                            'is_access_group_match' => ! empty($isAccessGroupMatch),
+                            'is_access_group_match' => true,
                         ],
-                        'is_not_accessed' => empty($isAccessGroupMatch),
                     ];
                 }
             }
