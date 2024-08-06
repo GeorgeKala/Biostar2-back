@@ -666,7 +666,6 @@ class EmployeeController extends Controller
                 $employeeAccessGroupIds = isset($user['access_groups']) ? array_column($user['access_groups'], 'id') : [];
                 $isAccessGroupMatch = array_intersect($accessGroupIds, $employeeAccessGroupIds);
 
-                // Only include if there is a match in access groups
                 if (!empty($isAccessGroupMatch)) {
                     $mergedData[] = [
                         'user_id' => $user['user_id'],

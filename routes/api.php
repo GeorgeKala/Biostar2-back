@@ -134,8 +134,6 @@ Route::middleware('auth:sanctum')->group(function () {
     //day types
     Route::resource('day-types', DayTypeController::class);
 
-    Route::post('/fetch-report', [ReportController::class, 'fetchReport']);
-
     Route::post('/commented-details', [CommentController::class, 'fetchCommentedDetails']);
     Route::post('/employee-orders', [CommentController::class, 'fetchOrders']);
     Route::get('/analyzed-comments', [CommentController::class, 'getAnalyzedComments']);
@@ -149,5 +147,3 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
 });
-
-Route::get('/analyzed-comments', [CommentController::class, 'getAnalyzedComments']);
