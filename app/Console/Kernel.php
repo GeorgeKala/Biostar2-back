@@ -5,6 +5,8 @@ namespace App\Console;
 use App\Jobs\CalculateDailyReport;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Log;
+
 
 class Kernel extends ConsoleKernel
 {
@@ -13,7 +15,12 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->job(new CalculateDailyReport())->dailyAt('23:55');
+        $schedule->job(new CalculateDailyReport(now()->format('Y-m-d')))
+            ->dailyAt('18:59');
+
+//        $schedule->call(function () {
+//            Log::info('ssjsjsjsjsjsjsjsj');
+//        })->dailyAt('17:38');
     }
 
     /**

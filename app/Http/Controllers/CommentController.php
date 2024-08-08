@@ -139,7 +139,6 @@ class CommentController extends Controller
 
         $dayDetails = $query->get();
 
-        // Format the data to include employee fullname directly in the JSON response
         $formattedDetails = $dayDetails->map(function ($detail) {
             return [
                 'id' => $detail->id,

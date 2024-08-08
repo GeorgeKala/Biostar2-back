@@ -147,3 +147,12 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
 });
+
+Route::get('/test-employee-usages', function () {
+    $job = \App\Jobs\CalculateDailyReport::dispatch(now()->format('2024-08-06'));
+    $usages = $job->getEmployeeDailyUsages(1032, '2024-08-06');
+
+    return response()->json($usages);
+});
+
+Route::post('/reports/monthly', [ReportController::class, 'getMonthlyReports']);

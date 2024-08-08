@@ -1,6 +1,5 @@
 <?php
 
-// app/Jobs/CalculateDailyReport.php
 
 namespace App\Jobs;
 
@@ -13,23 +12,23 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class CalculateDailyReport implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $date;
-    protected $token;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($date, $token)
+    public function __construct($date)
     {
         $this->date = $date ?: Carbon::yesterday()->format('Y-m-d');
-        $this->token = $token;
+//        $this->date = Carbon::yesterday()->format('Y-m-d');
     }
 
     /**
@@ -39,13 +38,12 @@ class CalculateDailyReport implements ShouldQueue
      */
     public function handle()
     {
-        $employees = Employee::with('schedule', 'department', 'dayDetails.dayType', 'holidays')->get();
-        
-        foreach ($employees as $employee) {
-            // Logic to calculate daily report for each employee
-            $dailyReportData = $this->calculateDailyReport($employee, $this->date);
 
-            // Save daily report
+        Log::info('handle start');
+        $employees = Employee::with('schedule', 'department', 'dayDetails.dayType', 'holidays')->get();
+
+        foreach ($employees as $employee) {
+            $dailyReportData = $this->calculateDailyReport($employee, $this->date);
             DailyReport::updateOrCreate(
                 ['employee_id' => $employee->id, 'date' => $this->date],
                 $dailyReportData
@@ -55,6 +53,8 @@ class CalculateDailyReport implements ShouldQueue
 
     protected function calculateDailyReport($employee, $date)
     {
+
+        Log::info('calculate daily info');
         $weekDayEnglish = date('l', strtotime($date));
         $englishToGeorgianWeekdays = [
             'Monday' => 'ორშაბათი',
@@ -96,7 +96,7 @@ class CalculateDailyReport implements ShouldQueue
             }
         }
 
-        $dailyUsages = $this->getEmployeeDailyUsages($employee->id, $date, $this->token);
+        $dailyUsages = $this->getEmployeeDailyUsages($employee->id, $date);
 
         if (!empty($dailyUsages)) {
             sort($dailyUsages);
@@ -153,58 +153,81 @@ class CalculateDailyReport implements ShouldQueue
         return $dailyReportData;
     }
 
-    protected function getEmployeeDailyUsages($employeeId, $date, $token)
+    public function getEmployeeDailyUsages($employeeId, $date)
     {
-        $sessionId = 'your-session-id'; 
-        $baseUrl = 'https://your-api-endpoint/api/events/search';
 
-        $startDateTime = (new \DateTime($date))->format('Y-m-d\T00:00:00.000\Z');
-        $endDateTime = (new \DateTime($date))->format('Y-m-d\T23:59:59.999\Z');
-
-        $body = [
-            'Query' => [
-                'limit' => 51,
-                'conditions' => [
-                    [
-                        'column' => 'datetime',
-                        'operator' => 3,
-                        'values' => [
-                            $startDateTime,
-                            $endDateTime,
-                        ],
-                    ],
-                    [
-                        'column' => 'event_type_id',
-                        'operator' => 0,
-                        'values' => [
-                            '4102', 
-                        ],
-                    ],
-                ],
+        $loginUrl = 'https://10.150.20.173/api/login';
+        $baseUrl = 'https://10.150.20.173/api/events/search';
+        $userData = [
+            'User' => [
+                'login_id' => env('BIOSTAR_ADMIN_USER'),
+                'password' => env('BIOSTAR_ADMIN_PASSWORD'),
             ],
         ];
 
-        $response = Http::withOptions(['verify' => false])
-            ->withHeaders([
-                'bs-session-id' => $sessionId,
-               
-            ])
-            ->post($baseUrl, $body);
+        $loginResponse = Http::withOptions(['verify' => false])
+            ->post($loginUrl, $userData);
+        if ($loginResponse->successful()) {
+            $bsSessionId = $loginResponse->header('bs-session-id');
 
-        if ($response->successful()) {
-            $reports = $response->json();
-            $rows = $reports['EventCollection']['rows'] ?? [];
+            $startDateTime = Carbon::parse($date)->startOfDay()->format('Y-m-d\TH:i:s.000\Z');
+            $endDateTime = Carbon::parse($date)->endOfDay()->format('Y-m-d\TH:i:s.999\Z');
 
-            $dailyUsages = [];
-            foreach ($rows as $row) {
-                if (isset($row['server_datetime']) && isset($row['user_id']) && $row['user_id']['user_id'] == $employeeId) {
-                    $dailyUsages[] = $row['server_datetime'];
+
+            $body = [
+                'Query' => [
+                    'limit' => 1000,
+                    'conditions' => [
+                        [
+                            'column' => 'datetime',
+                            'operator' => 3,
+                            'values' => [
+                                $startDateTime,
+                                $endDateTime,
+                            ],
+                        ],
+                        [
+                            'column' => 'event_type_id',
+                            'operator' => 0,
+                            'values' => [
+                                '4102',
+                            ],
+                        ],
+                    ],
+                ],
+            ];
+            $eventsResponse = Http::withOptions(['verify' => false])
+                ->withHeaders([
+                    'bs-session-id' => $bsSessionId,
+                ])
+                ->post($baseUrl, $body);
+            if ($eventsResponse->successful()) {
+
+                $reports = $eventsResponse->json();
+                $rows = $reports['EventCollection']['rows'] ?? [];
+                $dailyUsages = [];
+
+                if(is_array($rows)){
+                    foreach ($rows as $row) {
+                        if (isset($row['server_datetime']) && isset($row['user_id']) && $row['user_id']['user_id'] == $employeeId) {
+                            $dailyUsages[] = $row['server_datetime'];
+                        }
+                    }
                 }
+                return $dailyUsages;
+            } else {
+                return [
+                    'error' => 'Event search request failed',
+                    'status' => $eventsResponse->status(),
+                    'response' => $eventsResponse->body(),
+                ];
             }
-
-            return $dailyUsages;
+        } else {
+            return [
+                'error' => 'Login request failed',
+                'status' => $loginResponse->status(),
+                'response' => $loginResponse->body(),
+            ];
         }
-
-        return [];
     }
 }
