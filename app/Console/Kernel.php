@@ -16,11 +16,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->job(new CalculateDailyReport(now()->format('Y-m-d')))
-            ->dailyAt('18:59');
+            ->dailyAt('17:03');
 
-//        $schedule->call(function () {
-//            Log::info('ssjsjsjsjsjsjsjsj');
-//        })->dailyAt('17:38');
     }
 
     /**

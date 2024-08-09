@@ -19,10 +19,10 @@ return new class extends Migration
             $table->string('position');
             $table->dateTime('start_datetime');
             $table->dateTime('expiry_datetime')->nullable();
-            $table->integer('honorable_minutes_per_day')->default(5);
+            $table->integer('honorable_minutes_per_day')->nullable();
             $table->string('device')->nullable();
             $table->string('card_number');
-            $table->string('checksum');
+            $table->string('checksum')->nullable();
             $table->foreignId('department_id')->constrained();
             $table->foreignId('group_id')->constrained();
             $table->foreignId('schedule_id')->constrained('schedules');

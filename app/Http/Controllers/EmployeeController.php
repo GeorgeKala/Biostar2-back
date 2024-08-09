@@ -24,9 +24,15 @@ class EmployeeController extends Controller
     {
         $departmentId = $request->input('department_id');
         $fullname = $request->input('fullname');
+        $status = $request->input('status', 'active');
 
-        $query = Employee::with('department', 'group', 'schedule', 'holidays', 'user')
-            ->whereNull('expiry_datetime');
+        $query = Employee::with('department', 'group', 'schedule', 'holidays', 'user');
+
+        if ($status === 'active') {
+            $query->whereNull('expiry_datetime');
+        } elseif ($status === 'archived') {
+            $query->whereNotNull('expiry_datetime');
+        }
 
         if ($departmentId) {
             $query->where('department_id', $departmentId);

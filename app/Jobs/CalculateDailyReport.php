@@ -54,7 +54,7 @@ class CalculateDailyReport implements ShouldQueue
     protected function calculateDailyReport($employee, $date)
     {
 
-        Log::info('calculate daily info');
+      
         $weekDayEnglish = date('l', strtotime($date));
         $englishToGeorgianWeekdays = [
             'Monday' => 'ორშაბათი',
@@ -107,16 +107,25 @@ class CalculateDailyReport implements ShouldQueue
                 $scheduleStart = $employee->schedule->day_start;
                 $scheduleEnd = $employee->schedule->day_end;
 
-                $comeTime = new \DateTime($dailyUsages[0]);
-                $leaveTime = new \DateTime(end($dailyUsages));
-                $scheduleStartTime = new \DateTime($date . ' ' . $scheduleStart);
-                $scheduleEndTime = new \DateTime($date . ' ' . $scheduleEnd);
+                $timezone = new \DateTimeZone('UTC'); // or 'Asia/Tbilisi', based on your setup
+
+                $comeTime = new \DateTime($dailyUsages[0], $timezone);
+                $leaveTime = new \DateTime(end($dailyUsages), $timezone);
+                $scheduleStartTime = new \DateTime($date . ' ' . $scheduleStart, $timezone);
+                $scheduleEndTime = new \DateTime($date . ' ' . $scheduleEnd, $timezone);
+
+
+                Log::info('Come Time: ' . $comeTime->format('Y-m-d H:i:s'));
+                Log::info('Leave Time: ' . $leaveTime->format('Y-m-d H:i:s'));
+                Log::info('Schedule Start Time: ' . $scheduleStartTime->format('Y-m-d H:i:s'));
+                Log::info('Schedule End Time: ' . $scheduleEndTime->format('Y-m-d H:i:s'));
 
                 $comeLateInterval = $comeTime > $scheduleStartTime ? $scheduleStartTime->diff($comeTime) : null;
                 $comeEarlyInterval = $comeTime < $scheduleStartTime ? $scheduleStartTime->diff($comeTime) : null;
                 $leaveLateInterval = $leaveTime > $scheduleEndTime ? $scheduleEndTime->diff($leaveTime) : null;
                 $leaveEarlyInterval = $leaveTime < $scheduleEndTime ? $scheduleEndTime->diff($leaveTime) : null;
 
+                Log::info('Come Late Interval: ' . ($comeLateInterval ? $comeLateInterval->format('%H:%I:%S') : 'None'));
                 $dailyReportData['come_late'] = $comeLateInterval ? $comeLateInterval->format('%H:%I:%S') : null;
                 $dailyReportData['come_early'] = $comeEarlyInterval ? $comeEarlyInterval->format('%H:%I:%S') : null;
                 $dailyReportData['leave_late'] = $leaveLateInterval ? $leaveLateInterval->format('%H:%I:%S') : null;

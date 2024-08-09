@@ -17,21 +17,21 @@ class ReportController extends Controller
 //        try {
 //            $sessionId = $request->header('Bs-Session-Id');
 //            $baseUrl = 'https://10.150.20.173/api/events/search';
-//
+
 //            $startDate = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
 //            $endDate = $request->input('end_date', now()->endOfMonth()->format('Y-m-d'));
-//
+
 //            $today = now()->format('Y-m-d');
 //            if ($endDate > $today) {
 //                $endDate = $today;
 //            }
-//
+
 //            $startDateTime = (new \DateTime($startDate))->format('Y-m-d\T00:00:00.000\Z');
 //            $endDateTime = (new \DateTime($endDate))->format('Y-m-d\T23:59:59.999\Z');
-//
+
 //            $departmentId = $request->input('department_id');
 //            $employeeId = $request->input('employee_id');
-//
+
 //            $body = [
 //                'Query' => [
 //                    'limit' => 51,
@@ -54,31 +54,31 @@ class ReportController extends Controller
 //                    ],
 //                ],
 //            ];
-//
+
 //            $response = Http::withOptions(['verify' => false])
 //                ->withHeaders(['bs-session-id' => $sessionId])
 //                ->post($baseUrl, $body);
-//
+
 //            if ($response->successful()) {
 //                $reports = $response->json();
 //                $rows = $reports['EventCollection']['rows'] ?? [];
-//
-//
+
+
 //                $employeesQuery = \App\Models\Employee::with('schedule', 'department', 'dayDetails.dayType', 'holidays');
-//
+
 //                if ($departmentId) {
 //                    $employeesQuery->where('department_id', $departmentId);
 //                }
-//
+
 //                if ($employeeId) {
 //                    $employeesQuery->where('id', $employeeId);
 //                }
-//
+
 //                $employees = $employeesQuery->get();
 //                $data = [];
-//
+
 //                $datesRange = $this->createDateRangeArray($startDate, $endDate);
-//
+
 //                $englishToGeorgianWeekdays = [
 //                    'Monday' => 'ორშაბათი',
 //                    'Tuesday' => 'სამშაბათი',
@@ -88,13 +88,13 @@ class ReportController extends Controller
 //                    'Saturday' => 'შაბათი',
 //                    'Sunday' => 'კვირა',
 //                ];
-//
+
 //                foreach ($employees as $employee) {
 //                    foreach ($datesRange as $date) {
 //                        $userId = $employee->id;
 //                        $weekDayEnglish = date('l', strtotime($date));
 //                        $weekDayGeorgian = $englishToGeorgianWeekdays[$weekDayEnglish];
-//
+
 //                        $employeeData = [
 //                            'user_id' => $userId,
 //                            'fullname' => $employee->fullname,
@@ -118,9 +118,9 @@ class ReportController extends Controller
 //                            'forgive_type' => '',
 //                            'day_type_id' => ''
 //                        ];
-//
+
 //                        $dayDetail = $employee->dayDetails->where('date', $date)->first();
-//
+
 //                        if ($dayDetail) {
 //                            if ($dayDetail->dayType !== null) {
 //                                $employeeData['day_type_id'] = $dayDetail->day_type_id;
@@ -139,17 +139,17 @@ class ReportController extends Controller
 //                                $employeeData['day_type'] = 'სამუშაო დღე';
 //                            }
 //                        }
-//
+
 //                        $dailyUsages = [];
 //                        if (is_array($rows)) {
 //                            foreach ($rows as $row) {
 //                                if (isset($row['server_datetime']) && isset($row['user_id']) && $row['user_id']['user_id'] !== $userId) {
 //                                    $usageDatetime = $row['server_datetime'];
 //                                    $dailyUsages[] = $usageDatetime;
-//
-//
+
+
 //                                    $eventDate = substr($usageDatetime, 0, 10);
-//
+
 //                                    if ($eventDate == $date) {
 //                                        $employeeData['device_id'] = $row['device_id']['id'];
 //                                        $employeeData['device_name'] = $row['device_id']['name'];
@@ -158,66 +158,66 @@ class ReportController extends Controller
 //                                }
 //                            }
 //                        }
-//
-//
+
+
 //                        if (! empty($dailyUsages)) {
 //                            sort($dailyUsages);
 //                            $employeeData['come_time'] = substr($dailyUsages[0], 11, 8);
 //                            $employeeData['leave_time'] = substr(end($dailyUsages), 11, 8);
-//
+
 //                            if ($employee->schedule) {
 //                                $scheduleStart = $employee->schedule->day_start;
 //                                $scheduleEnd = $employee->schedule->day_end;
-//
+
 //                                $comeTime = new \DateTime($dailyUsages[0]);
 //                                $leaveTime = new \DateTime(end($dailyUsages));
 //                                $scheduleStartTime = new \DateTime($date.' '.$scheduleStart);
 //                                $scheduleEndTime = new \DateTime($date.' '.$scheduleEnd);
-//
+
 //                                $comeLateInterval = $comeTime > $scheduleStartTime ? $scheduleStartTime->diff($comeTime) : null;
 //                                $comeEarlyInterval = $comeTime < $scheduleStartTime ? $scheduleStartTime->diff($comeTime) : null;
 //                                $leaveLateInterval = $leaveTime > $scheduleEndTime ? $scheduleEndTime->diff($leaveTime) : null;
 //                                $leaveEarlyInterval = $leaveTime < $scheduleEndTime ? $scheduleEndTime->diff($leaveTime) : null;
-//
+
 //                                $employeeData['come_late'] = $comeLateInterval ? $comeLateInterval->format('%H:%I:%S') : null;
 //                                $employeeData['come_early'] = $comeEarlyInterval ? $comeEarlyInterval->format('%H:%I:%S') : null;
 //                                $employeeData['leave_late'] = $leaveLateInterval ? $leaveLateInterval->format('%H:%I:%S') : null;
 //                                $employeeData['leave_early'] = $leaveEarlyInterval ? $leaveEarlyInterval->format('%H:%I:%S') : null;
-//
+
 //                                $interval = $comeTime->diff($leaveTime);
 //                                $workedHours = $interval->h + ($interval->i / 60) + ($interval->s / 3600);
 //                                $employeeData['worked_hours'] += number_format($workedHours, 2);
-//
+
 //                                $employeeData['penalized_time'] = 0;
-//
+
 //                                if ($employee->holidays->contains('name', $weekDayGeorgian)) {
 //                                    $data[] = $employeeData;
 //                                    continue;
 //                                }
-//
+
 //                                if ($comeLateInterval && $employee->group && $employee->group->control) {
 //                                    $comeLateMinutes = $comeLateInterval->i + ($comeLateInterval->h * 60);
 //                                    $employeeData['penalized_time'] += $comeLateMinutes;
 //                                }
-//
+
 //                                if ($leaveEarlyInterval && $employee->group && $employee->group->leave_control) {
 //                                    $leaveEarlyMinutes = $leaveEarlyInterval->i + ($leaveEarlyInterval->h * 60);
 //                                    $employeeData['penalized_time'] += $leaveEarlyMinutes;
 //                                }
-//
+
 //                                $employeeData['final_penalized_time'] = $employeeData['penalized_time'] - $employee->honorable_minutes_per_day;
-//
+
 //                                if ($employeeData['final_penalized_time'] < 0) {
 //                                    $employeeData['final_penalized_time'] = 0;
 //                                }
 //                            }
 //                        }
-//
-//
+
+
 //                        $data[] = $employeeData;
 //                    }
 //                }
-//
+
 //                return response()->json($data);
 //            } else {
 //                return response()->json(['error' => 'Failed to retrieve monthly reports.'], 500);
